@@ -1,5 +1,8 @@
 import 'dart:math';
-import 'package:ansicolor/ansicolor.dart';
+
+import 'package:quectocolors/src/quectocolors_pen.dart';
+//import 'package:ansicolor/ansicolor.dart';
+
 ///import tty from 'node:tty';
 ///
 ///// eslint-disable-next-line no-warning-comments
@@ -12,7 +15,7 @@ bool terminalSupportsColor = true;
 
 class QuectoColors {
 
-  static String Function(dynamic) format( final int ansiOpen, final int ansiClose ) {
+  static String Function(String) format( final int ansiOpen, final int ansiClose ) {
     if(!terminalSupportsColor) {
       return (input) => input;
     }
@@ -54,17 +57,23 @@ class QuectoColors {
 
 
 
-    return (input) {
-      final String string = input.toString(); // eslint-disable-line no-implicit-coercion -- This is faster.
+    return (string) {
+      //final String string = input;//.toString(); // eslint-disable-line no-implicit-coercion -- This is faster.
       int index = string.indexOf(closeCode);
 
       if (index == -1) {
-        // Note: Intentionally not using string interpolation for performance reasons.
-        return openCode + string + closeCode;
+        // ADDING STRINGS VERSION 
+        //    return openCode + string + closeCode; // 25% slower then string interpolation
+        // STRING BUFFER VERSION, 
+        //    sb.clear();
+        //    sb.write(openCode);
+        //    sb.write(string);
+        //    sb.write(closeCode);
+        //    return sb.toString(); //30+% slower than string interpolation
+        return '$openCode$string$closeCode';
       }
 
       // Handle nested colors.
-//CLOSE but still slower      return openCode + string + closeCode;
 
       // We could do this:
       // return openCode + string.replaceAll(closeCode, openCode) + closeCode;
@@ -85,8 +94,8 @@ class QuectoColors {
       */
 
 
-      final sb = StringBuffer();
-    
+      //final sb = StringBuffer();
+      sb.clear();
       //var result = openCode;
       var lastIndex = 0;
 
@@ -197,87 +206,155 @@ extension QuectoColorsOnStrings on String {
 }
 
 
+enum TestLevels {
+  simple,
+  complex,
+  largerandom_complex,
+}
+
+enum ResultsToPrint {
+  none,
+  oneAtStart,
+  someAtStartAndEnd,
+}
+
 const int test = 2;
 
 void main() {
-  const bool useRandomString = false;
-  const bool printSomeResults = true;
+  TestLevels testMode = TestLevels.complex;
+  const ResultsToPrint printSomeResults = ResultsToPrint.someAtStartAndEnd;
+  const int printSomeNumberOfLinesAtStartAndEnd = 10;
 
+  // The large random test Tests the speed of indexing to find the next ESC sequence and handle nesting - 
+  final random = Random();
+  final randomBigString = List.generate(200, (_) => String.fromCharCode(random.nextInt(26) + 97)).join(); // Generate a large random string
+
+  print('Running testMode = ${testMode} '.yellowBright );
+
+  print('-----------------------------------------------\n'.magentaBright );
   final iterations = 100000;
   final stopwatch = Stopwatch()..start();
 
   for (var i = 0; i < iterations; i++) {
-
-    if(useRandomString) {
-      final random = Random();
-      final randomBigString = List.generate(1000, (_) => String.fromCharCode(random.nextInt(26) + 97)).join(); // Generate a large random string
-      String testThisStr = 'This is our string to test $i'+randomBigString;
-      String innerString2 = "inner $i str"+randomBigString;
-      final outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(randomBigString) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + ' and end of red');   
-    } else {
-      String testThisStr = 'This is our string to test $i';
-      String innerString2 = "inner $i str";
-  
-      final outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(testThisStr) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + ' and end of red');
-      if(printSomeResults && (i<10 || i>=(iterations-10))) {
-        print(outStr);
-      }
+    late final String outStr;
+    switch(testMode) {
+      case TestLevels.largerandom_complex:
+        String testThisStr = 'This is our string to test $i'+randomBigString;
+        String innerString2 = "inner $i str"+randomBigString;
+        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(randomBigString) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + testThisStr);   
+      case TestLevels.complex:
+        String testThisStr = 'This is our string to test $i';
+        String innerString2 = "inner $i str";
+        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(testThisStr) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + ' and end of red');
+      case TestLevels.simple:
+        outStr = QuectoColors.red( 'Hello ');
+    }
+    if(printSomeResults == ResultsToPrint.none) {
+      // do nothing
+    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
+      print(outStr);
+    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
+      print(outStr);
     }
   }
 
   stopwatch.stop();
 
-  print('QuectoColors performance test:');
+  print('QuectoColors performance test:'.blue);
   print('Iterations: $iterations');
   print('Total time: ${stopwatch.elapsedMilliseconds} ms');
   print('Average time per iteration: ${stopwatch.elapsedMilliseconds / iterations} ms');
 
+  print('-----------------------------------------------\n'.magentaBright );
   //Test the built in substring method for comparison.
   final stopwatch2 = Stopwatch()..start();
+
+  // make pen outside loop for fastest possible
+  AnsiPen pred = AnsiPen()..red();
+  AnsiPen pgreen = AnsiPen()..green();
+  AnsiPen pblue = AnsiPen()..blue();
+  AnsiPen pyellow= AnsiPen()..yellow();
+
   for (var i = 0; i < iterations; i++) {
-    if(test==2) {
-
-      String testThisStr = 'This is our string to test $i';
-      String innerString2 = "inner $i str";
-      AnsiPen pred = AnsiPen()..red();
-      AnsiPen pgreen = AnsiPen()..green();
-      AnsiPen pblue = AnsiPen()..blue();
-      AnsiPen pyellow= AnsiPen()..yellow();
-//shows broken nesting      
-   //WRONG  
-    final outStr =pred( 'Hello '+ pblue(testThisStr) + pgreen(' Here is inner ${pyellow(innerString2)} and end of green') + ' and end of red');
-    ///WRITE COLORS but manualy done  final outStr =pred( 'Hello '+ pblue(testThisStr) + pgreen(' Here is inner ${pyellow(innerString2)} ${'and end of green'.green}') + pred(' and end of red'));
-      if(printSomeResults && (i<10 || i>=(iterations-10))) {
-        print(outStr);
-      }
-
-
-    } else if(useRandomString) {
-      final random = Random();
-      final randomBigString = List.generate(1000, (_) => String.fromCharCode(random.nextInt(26) + 97)).join(); // Generate a large random string
-      String testThisStr = 'This is our string to test $i'+randomBigString;
-      String innerString2 = "inner $i str"+randomBigString;
-      final outStr = ('Hello '+ randomBigString.blue + ' Here is inner ${innerString2.yellow} and end of green'.green + ' and end of red').red;   
-    } else {
-      String testThisStr = 'This is our string to test $i';
-      String innerString2 = "inner $i str";
-  
-      final outStr = ('Hello '+ testThisStr.blue + ' Here is inner ${(innerString2.yellow)} and end of green'.green + ' and end of red').red;
-      if(printSomeResults && (i<10 || i>=(iterations-10))) {
-        print(outStr);
-      }
+    late final String outStr;
+    switch(testMode) {
+      case TestLevels.largerandom_complex:
+        String testThisStr = 'This is our string to test $i'+randomBigString;
+        String innerString2 = "inner $i str"+randomBigString;
+        //shows broken nesting      
+        //WRONG  OUTPUT
+        outStr =pred( 'Hello '+ pblue(randomBigString) + pgreen(' Here is inner ${pyellow(innerString2)} and end of green') + testThisStr);
+      case TestLevels.complex:
+        String testThisStr = 'This is our string to test $i';
+        String innerString2 = "inner $i str";
+        //shows broken nesting      
+        //WRONG  output
+        outStr =pred( 'Hello '+ pblue(testThisStr) + pgreen(' Here is inner ${pyellow(innerString2)} and end of green') + ' and end of red');
+      case TestLevels.simple:
+        //AnsiPen pred = AnsiPen()..red();
+        outStr = pred( 'Hello ' );
+    }
+    if(printSomeResults == ResultsToPrint.none) {
+      // do nothing
+    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
+      print(outStr);
+    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
+      print(outStr);
     }
   }
-  stopwatch2.stop();
-
-  print('\nBuilt in USING STRING EXTENTIONS performance test:');
+  print('\nBuilt in USING ANSICOLORS performance test:'.green);
   print('Iterations: $iterations');
   print('Total time: ${stopwatch2.elapsedMilliseconds} ms');
   print('Average time per iteration: ${stopwatch2.elapsedMilliseconds / iterations} ms');
 
-  double percent1to2 = stopwatch2.elapsedMilliseconds/stopwatch.elapsedMilliseconds;
+  double percent_2div1 = stopwatch2.elapsedMilliseconds/stopwatch.elapsedMilliseconds;
 
-  double percent2to1 = stopwatch.elapsedMilliseconds/stopwatch2.elapsedMilliseconds;
+  double percent_1div2 = stopwatch.elapsedMilliseconds/stopwatch2.elapsedMilliseconds;
 
-  print('PERCENT diff    quectocolors to ansicolors = ${(percent1to2*100.0).toStringAsFixed(2)}%    ansicolors to quectocolors=${(percent2to1*100.0).toStringAsFixed(2)}');
+  print('PERCENT diff    ansicolors/quectocolors = ${(percent_2div1*100.0).toStringAsFixed(2)}%  (<100% means faster)  quectocolors/ansicolors =${(percent_1div2*100.0).toStringAsFixed(2)}%'.blueBright);
+
+
+  print('-----------------------------------------------\n'.magentaBright );
+  //Test the string extensions version
+  final stopwatch3 = Stopwatch()..start();
+
+  for (var i = 0; i < iterations; i++) {
+    late final String outStr;
+    switch(testMode) {
+      case TestLevels.largerandom_complex:
+        String testThisStr = 'This is our string to test $i'+randomBigString;
+        String innerString2 = "inner $i str"+randomBigString;
+        outStr = ('Hello '+ randomBigString.blue + ' Here is inner ${innerString2.yellow} and end of green'.green + ' and end of red').red;   
+      case TestLevels.complex:
+        String testThisStr = 'This is our string to test $i';
+        String innerString2 = "inner $i str";
+    
+        outStr = ('Hello '+ testThisStr.blue + ' Here is inner ${(innerString2.yellow)} and end of green'.green + ' and end of red').red;
+      case TestLevels.simple:
+        outStr = 'Hello '.red;
+    }
+    if(printSomeResults == ResultsToPrint.none) {
+      // do nothing
+    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
+      print(outStr);
+    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
+      print(outStr);
+    }
+  }
+  stopwatch3.stop();
+
+  print('\nBuilt in USING STRING EXTENTIONS performance test:'.yellow);
+  print('Iterations: $iterations');
+  print('Total time: ${stopwatch3.elapsedMilliseconds} ms');
+  print('Average time per iteration: ${stopwatch3.elapsedMilliseconds / iterations} ms');
+
+  double percent_3div1 = stopwatch3.elapsedMilliseconds/stopwatch.elapsedMilliseconds;
+  double percent_1div3 = stopwatch.elapsedMilliseconds/stopwatch3.elapsedMilliseconds;
+
+  double percent_3div2 = stopwatch3.elapsedMilliseconds/stopwatch2.elapsedMilliseconds;
+  double percent_2div3 = stopwatch2.elapsedMilliseconds/stopwatch3.elapsedMilliseconds;
+
+
+  print('PERCENT diff    quecto strings/quectocolors = ${(percent_3div1*100.0).toStringAsFixed(2)}%  (<100% means faster)  quectocolors/quecto strings = ${(percent_1div3*100.0).toStringAsFixed(2)}%'.blueBright);
+  print('PERCENT diff    quecto strings/ANSICOLORS = ${(percent_3div2*100.0).toStringAsFixed(2)}%  (<100% means faster)   ANSICOLORS/quecto strings = ${(percent_2div3*100.0).toStringAsFixed(2)}%'.cyan);
 }
