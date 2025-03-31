@@ -1,6 +1,7 @@
 import 'dart:math';
 
-import 'package:quectocolors/src/quectocolors_pen.dart';
+import "/supports_ansi_color.dart";
+
 //import 'package:ansicolor/ansicolor.dart';
 
 ///import tty from 'node:tty';
@@ -10,15 +11,104 @@ import 'package:quectocolors/src/quectocolors_pen.dart';
 ///// Lots of optionals here to support Deno.
 ///const hasColors = tty?.WriteStream?.prototype?.hasColors?.() ?? false;
 
+/*
 
-bool terminalSupportsColor = true;
 
-class QuectoColors {
+/// Globally enable or disable [AnsiPen] settings.
+///
+/// Note: defaults to environment support; but can be overridden.
+///
+/// Handy for turning on and off embedded colors without commenting out code.
+bool ansiColorDisabled = !supportsAnsiColor;
 
-  static String Function(String) format( final int ansiOpen, final int ansiClose ) {
-    if(!terminalSupportsColor) {
-      return (input) => input;
+@Deprecated(
+    'Will be removed in future releases in favor of [ansiColorDisabled]')
+// ignore: non_constant_identifier_names
+bool get color_disabled => ansiColorDisabled;
+@Deprecated(
+    'Will be removed in future releases in favor of [ansiColorDisabled]')
+// ignore: non_constant_identifier_names
+set color_disabled(bool disabled) => ansiColorDisabled = disabled;
+
+/// Pen attributes for foreground and background colors.
+///
+/// Use the pen in string interpolation to output ansi codes.
+/// Use [up] in string interpolation to globally reset colors.
+class AnsiPen {
+  /// Treat a pen instance as a function such that `pen('msg')` is the same as
+  /// `pen.write('msg')`.
+  String call(Object msg) => write(msg);
+
+  /// Allow pen colors to be used in a string.
+  ///
+  /// Note: Once the pen is down, its attributes remain in effect till they are
+  ///     changed by another pen or [up].
+  @override
+  String toString() {
+    if (ansiColorDisabled) return '';
+    if (!_dirty) return _pen;
+
+    final sb = StringBuffer();
+    if (_fcolor != -1) {
+      sb.write('${ansiEscape}38;5;${_fcolor}m');
     }
+
+    if (_bcolor != -1) {
+      sb.write('${ansiEscape}48;5;${_bcolor}m');
+    }
+
+    _dirty = false;
+    _pen = sb.toString();
+    return _pen;
+  }
+
+  /// Returns control codes to change the terminal colors.
+  String get down => '${this}';
+
+  /// Resets all pen attributes in the terminal.
+  String get up => ansiColorDisabled ? '' : ansiDefault;
+
+  /// Write the [msg.toString()] with the pen's current settings and then
+  /// reset all attributes.
+  String write(Object msg) => '${this}$msg$up';
+
+  void black({bool bg = false, bool bold = false}) => _std(0, bold, bg);
+  void red({bool bg = false, bool bold = false}) => _std(1, bold, bg);
+  void green({bool bg = false, bool bold = false}) => _std(2, bold, bg);
+  void yellow({bool bg = false, bool bold = false}) => _std(3, bold, bg);
+  void blue({bool bg = false, bool bold = false}) => _std(4, bold, bg);
+  void magenta({bool bg = false, bool bold = false}) => _std(5, bold, bg);
+  void cyan({bool bg = false, bool bold = false}) => _std(6, bold, bg);
+  void white({bool bg = false, bool bold = false}) => _std(7, bold, bg);
+
+  /// Sets the pen color to the rgb value between 0.0..1.0.
+  void rgb({num r = 1.0, num g = 1.0, num b = 1.0, bool bg = false}) => xterm(
+      (r.clamp(0.0, 1.0) * 5).toInt() * 36 +
+          (g.clamp(0.0, 1.0) * 5).toInt() * 6 +
+          (b.clamp(0.0, 1.0) * 5).toInt() +
+          16,
+      bg: bg);
+
+  /// Sets the pen color to a grey scale value between 0.0 and 1.0.
+  void gray({num level = 1.0, bool bg = false}) =>
+      xterm(232 + (level.clamp(0.0, 1.0) * 23).round(), bg: bg);
+
+*/
+
+typedef QuectoStyler = String Function(String);
+
+final class QuectoColors {
+
+  static String debugOut( String instr ) {
+    return instr.replaceAll('\u001B[', 'ESC[');
+  }
+
+  static QuectoStyler createStyler( final int ansiOpen, final int ansiClose ) {
+  //static String Function(String) createStyler( final int ansiOpen, final int ansiClose ) {
+    if(ansiColorDisabled) {
+      return (String input) => input;
+    }
+
 
 //WAY 1
 //    final String openCode = '\u001B[${ansiOpen}m';
@@ -42,7 +132,7 @@ class QuectoColors {
 //
 //    final String closeCode = sb.toString();
 
-
+/* WAY 3 - sometimes appeared to test faster but REALLY??
     final sb = StringBuffer();
 
 
@@ -54,11 +144,15 @@ class QuectoColors {
     sb.write('\u001B[${ansiClose}m');
 
     final String closeCode = sb.toString();
+WAY 3*/
 
+    final String openCode = '\u001B[${ansiOpen}m';
+    final String closeCode = '\u001B[${ansiClose}m';
+    final sb = StringBuffer(openCode); // create our string buffer here - so scoped for each styler but not having to be created each styling
+    final closeLength = closeCode.length;
 
-
-    return (string) {
-      //final String string = input;//.toString(); // eslint-disable-line no-implicit-coercion -- This is faster.
+    return (String string) {
+      //final String string = input.toString();  // we just take string instead, the conversion overhead is not worth it
       int index = string.indexOf(closeCode);
 
       if (index == -1) {
@@ -78,7 +172,7 @@ class QuectoColors {
       // We could do this:
       // return openCode + string.replaceAll(closeCode, openCode) + closeCode;
       // but this version is 20 to 30 % faster:
-      /* WAY 1
+      /* WAY 1 * /
       var result = openCode;
       var lastIndex = 0;
 
@@ -91,270 +185,138 @@ class QuectoColors {
       result += string.substring(lastIndex) + closeCode;
 
       return result;
-      */
+      / * END  WAY 1 */
 
+/* WAY 2 STRING BUFFERS - FASTER than above */
+      //Use other scoped sb//final sb = StringBuffer();   
 
-      //final sb = StringBuffer();
-      sb.clear();
-      //var result = openCode;
-      var lastIndex = 0;
+      // CREATE HERE WITH INITIAL VALUE
+      //final sb = StringBuffer(openCode);
+      
+      //USE OUTER - fastest
+      sb.clear();  // we are using persistently scoped sb, so clear and start fresh
+      sb.write(openCode );
+      
+      int lastIndex = 0;
 
-      while (index != -1) {
+      // avoid one comparison by doing index!=-1 check at END of loop since the first time we come in 
+      // we know it is NOT -1 or we would have exited above..
+      //while (index != -1) {
+      //  sb.write( string.substring(lastIndex, index) );
+      //  sb.write(openCode );
+      //  lastIndex = index + closeLength;
+      //  index = string.indexOf(closeCode, lastIndex);
+      //}
+
+      do {
         sb.write( string.substring(lastIndex, index) );
         sb.write(openCode );
-        lastIndex = index + closeCode.length;
+        lastIndex = index + closeLength;
         index = string.indexOf(closeCode, lastIndex);
-      }
+      } while (index != -1);
+
 
       sb.write( string.substring(lastIndex) );
       sb.write( closeCode );
 
       return sb.toString();
-
+/* END WAY 2 */
     };
   }
 
-  static final reset = format(0, 0);
-  static final bold = format(1, 22);
-  static final dim = format(2, 22);
-  static final italic = format(3, 23);
-  static final underline = format(4, 24);
-  static final overline = format(53, 55);
-  static final inverse = format(7, 27);
-  static final hidden = format(8, 28);
-  static final strikethrough = format(9, 29);
-  static final black = format(30, 39);
-  static final red = format(31, 39);
-  static final green = format(32, 39);
-  static final yellow = format(33, 39);
-  static final blue = format(34, 39);
-  static final magenta = format(35, 39);
-  static final cyan = format(36, 39);
-  static final white = format(37, 39);
-  static final gray = format(90, 39);
-  static final bgBlack = format(40, 49);
-  static final bgRed = format(41, 49);
-  static final bgGreen = format(42, 49);
-  static final bgYellow = format(43, 49);
-  static final bgBlue = format(44, 49);
-  static final bgMagenta = format(45, 49);
-  static final bgCyan = format(46, 49);
-  static final bgWhite = format(47, 49);
-  static final bgGray = format(100, 49);
-  static final redBright = format(91, 39);
-  static final greenBright = format(92, 39);
-  static final yellowBright = format(93, 39);
-  static final blueBright = format(94, 39);
-  static final magentaBright = format(95, 39);
-  static final cyanBright = format(96, 39);
-  static final whiteBright = format(97, 39);
-  static final bgRedBright = format(101, 49);
-  static final bgGreenBright = format(102, 49);
-  static final bgYellowBright = format(103, 49);
-  static final bgBlueBright = format(104, 49);
-  static final bgMagentaBright = format(105, 49);
-  static final bgCyanBright = format(106, 49);
-  static final bgWhiteBright = format(107, 49);
+  final QuectoStyler reset = createStyler(0, 0);
+  final QuectoStyler bold = createStyler(1, 22);
+  final QuectoStyler dim = createStyler(2, 22);
+  final QuectoStyler italic = createStyler(3, 23);
+  final QuectoStyler underline = createStyler(4, 24);
+  final QuectoStyler overline = createStyler(53, 55);
+  final QuectoStyler inverse = createStyler(7, 27);
+  final QuectoStyler hidden = createStyler(8, 28);
+  final QuectoStyler strikethrough = createStyler(9, 29);
+  final QuectoStyler black = createStyler(30, 39);
+  final QuectoStyler red = createStyler(31, 39);
+  final QuectoStyler green = createStyler(32, 39);
+  final QuectoStyler yellow = createStyler(33, 39);
+  final QuectoStyler blue = createStyler(34, 39);
+  final QuectoStyler magenta = createStyler(35, 39);
+  final QuectoStyler cyan = createStyler(36, 39);
+  final QuectoStyler white = createStyler(37, 39);
+  final QuectoStyler gray = createStyler(90, 39);
+  final QuectoStyler bgBlack = createStyler(40, 49);
+  final QuectoStyler bgRed = createStyler(41, 49);
+  final QuectoStyler bgGreen = createStyler(42, 49);
+  final QuectoStyler bgYellow = createStyler(43, 49);
+  final QuectoStyler bgBlue = createStyler(44, 49);
+  final QuectoStyler bgMagenta = createStyler(45, 49);
+  final QuectoStyler bgCyan = createStyler(46, 49);
+  final QuectoStyler bgWhite = createStyler(47, 49);
+  final QuectoStyler bgGray = createStyler(100, 49);
+  final QuectoStyler redBright = createStyler(91, 39);
+  final QuectoStyler greenBright = createStyler(92, 39);
+  final QuectoStyler yellowBright = createStyler(93, 39);
+  final QuectoStyler blueBright = createStyler(94, 39);
+  final QuectoStyler magentaBright = createStyler(95, 39);
+  final QuectoStyler cyanBright = createStyler(96, 39);
+  final QuectoStyler whiteBright = createStyler(97, 39);
+  final QuectoStyler bgRedBright = createStyler(101, 49);
+  final QuectoStyler bgGreenBright = createStyler(102, 49);
+  final QuectoStyler bgYellowBright = createStyler(103, 49);
+  final QuectoStyler bgBlueBright = createStyler(104, 49);
+  final QuectoStyler bgMagentaBright = createStyler(105, 49);
+  final QuectoStyler bgCyanBright = createStyler(106, 49);
+  final QuectoStyler bgWhiteBright = createStyler(107, 49);
 }
 
+
+/* WE USE THE static versions as when COMPILED the static code is faster 
 
 extension QuectoColorsOnStrings on String {
 
+  static QuectoColors quectoColors = QuectoColors();
 
-  String get reset => QuectoColors.reset(this);
-  String get bold => QuectoColors.bold(this);
-  String get dim => QuectoColors.dim(this);
-  String get italic => QuectoColors.italic(this);
-  String get underline => QuectoColors.underline(this);
-  String get overline => QuectoColors.overline(this);
-  String get inverse => QuectoColors.inverse(this);
-  String get hidden => QuectoColors.hidden(this);
-  String get strikethrough => QuectoColors.strikethrough(this);
-  String get black => QuectoColors.black(this);
-  String get red => QuectoColors.red(this);
-  String get green => QuectoColors.green(this);
-  String get yellow => QuectoColors.yellow(this);
-  String get blue => QuectoColors.blue(this);
-  String get magenta => QuectoColors.magenta(this);
-  String get cyan => QuectoColors.cyan(this);
-  String get white => QuectoColors.white(this);
-  String get gray => QuectoColors.gray(this);
-  String get bgBlack => QuectoColors.bgBlack(this);
-  String get bgRed => QuectoColors.bgRed(this);
-  String get bgGreen => QuectoColors.bgGreen(this);
-  String get bgYellow => QuectoColors.bgYellow(this);
-  String get bgBlue => QuectoColors.bgBlue(this);
-  String get bgMagenta => QuectoColors.bgMagenta(this);
-  String get bgCyan => QuectoColors.bgCyan(this);
-  String get bgWhite => QuectoColors.bgWhite(this);
-  String get bgGray => QuectoColors.bgGray(this);
-  String get redBright => QuectoColors.redBright(this);
-  String get greenBright => QuectoColors.greenBright(this);
-  String get yellowBright => QuectoColors.yellowBright(this);
-  String get blueBright => QuectoColors.blueBright(this);
-  String get magentaBright => QuectoColors.magentaBright(this);
-  String get cyanBright => QuectoColors.cyanBright(this);
-  String get whiteBright => QuectoColors.whiteBright(this);
-  String get bgRedBright => QuectoColors.bgRedBright(this);
-  String get bgGreenBright => QuectoColors.bgGreenBright(this);
-  String get bgYellowBright => QuectoColors.bgYellowBright(this);
-  String get bgBlueBright => QuectoColors.bgBlueBright(this);
-  String get bgMagentaBright => QuectoColors.bgMagentaBright(this);
-  String get bgCyanBright => QuectoColors.bgCyanBright(this);
-  String get bgWhiteBright      => QuectoColors.bgWhiteBright(this);
+  String get reset => quectoColors.reset(this);
+  String get bold => quectoColors.bold(this);
+  String get dim => quectoColors.dim(this);
+  String get italic => quectoColors.italic(this);
+  String get underline => quectoColors.underline(this);
+  String get overline => quectoColors.overline(this);
+  String get inverse => quectoColors.inverse(this);
+  String get hidden => quectoColors.hidden(this);
+  String get strikethrough => quectoColors.strikethrough(this);
+  String get black => quectoColors.black(this);
+  String get red => quectoColors.red(this);
+  String get green => quectoColors.green(this);
+  String get yellow => quectoColors.yellow(this);
+  String get blue => quectoColors.blue(this);
+  String get magenta => quectoColors.magenta(this);
+  String get cyan => quectoColors.cyan(this);
+  String get white => quectoColors.white(this);
+  String get gray => quectoColors.gray(this);
+  String get bgBlack => quectoColors.bgBlack(this);
+  String get bgRed => quectoColors.bgRed(this);
+  String get bgGreen => quectoColors.bgGreen(this);
+  String get bgYellow => quectoColors.bgYellow(this);
+  String get bgBlue => quectoColors.bgBlue(this);
+  String get bgMagenta => quectoColors.bgMagenta(this);
+  String get bgCyan => quectoColors.bgCyan(this);
+  String get bgWhite => quectoColors.bgWhite(this);
+  String get bgGray => quectoColors.bgGray(this);
+  String get redBright => quectoColors.redBright(this);
+  String get greenBright => quectoColors.greenBright(this);
+  String get yellowBright => quectoColors.yellowBright(this);
+  String get blueBright => quectoColors.blueBright(this);
+  String get magentaBright => quectoColors.magentaBright(this);
+  String get cyanBright => quectoColors.cyanBright(this);
+  String get whiteBright => quectoColors.whiteBright(this);
+  String get bgRedBright => quectoColors.bgRedBright(this);
+  String get bgGreenBright => quectoColors.bgGreenBright(this);
+  String get bgYellowBright => quectoColors.bgYellowBright(this);
+  String get bgBlueBright => quectoColors.bgBlueBright(this);
+  String get bgMagentaBright => quectoColors.bgMagentaBright(this);
+  String get bgCyanBright => quectoColors.bgCyanBright(this);
+  String get bgWhiteBright      => quectoColors.bgWhiteBright(this);
 
 }
+*/
 
-
-enum TestLevels {
-  simple,
-  complex,
-  largerandom_complex,
-}
-
-enum ResultsToPrint {
-  none,
-  oneAtStart,
-  someAtStartAndEnd,
-}
-
-const int test = 2;
-
-void main() {
-  TestLevels testMode = TestLevels.complex;
-  const ResultsToPrint printSomeResults = ResultsToPrint.someAtStartAndEnd;
-  const int printSomeNumberOfLinesAtStartAndEnd = 10;
-
-  // The large random test Tests the speed of indexing to find the next ESC sequence and handle nesting - 
-  final random = Random();
-  final randomBigString = List.generate(200, (_) => String.fromCharCode(random.nextInt(26) + 97)).join(); // Generate a large random string
-
-  print('Running testMode = ${testMode} '.yellowBright );
-
-  print('-----------------------------------------------\n'.magentaBright );
-  final iterations = 100000;
-  final stopwatch = Stopwatch()..start();
-
-  for (var i = 0; i < iterations; i++) {
-    late final String outStr;
-    switch(testMode) {
-      case TestLevels.largerandom_complex:
-        String testThisStr = 'This is our string to test $i'+randomBigString;
-        String innerString2 = "inner $i str"+randomBigString;
-        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(randomBigString) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + testThisStr);   
-      case TestLevels.complex:
-        String testThisStr = 'This is our string to test $i';
-        String innerString2 = "inner $i str";
-        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(testThisStr) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + ' and end of red');
-      case TestLevels.simple:
-        outStr = QuectoColors.red( 'Hello ');
-    }
-    if(printSomeResults == ResultsToPrint.none) {
-      // do nothing
-    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
-      print(outStr);
-    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
-      print(outStr);
-    }
-  }
-
-  stopwatch.stop();
-
-  print('QuectoColors performance test:'.blue);
-  print('Iterations: $iterations');
-  print('Total time: ${stopwatch.elapsedMilliseconds} ms');
-  print('Average time per iteration: ${stopwatch.elapsedMilliseconds / iterations} ms');
-
-  print('-----------------------------------------------\n'.magentaBright );
-  //Test the built in substring method for comparison.
-  final stopwatch2 = Stopwatch()..start();
-
-  // make pen outside loop for fastest possible
-  AnsiPen pred = AnsiPen()..red();
-  AnsiPen pgreen = AnsiPen()..green();
-  AnsiPen pblue = AnsiPen()..blue();
-  AnsiPen pyellow= AnsiPen()..yellow();
-
-  for (var i = 0; i < iterations; i++) {
-    late final String outStr;
-    switch(testMode) {
-      case TestLevels.largerandom_complex:
-        String testThisStr = 'This is our string to test $i'+randomBigString;
-        String innerString2 = "inner $i str"+randomBigString;
-        //shows broken nesting      
-        //WRONG  OUTPUT
-        outStr =pred( 'Hello '+ pblue(randomBigString) + pgreen(' Here is inner ${pyellow(innerString2)} and end of green') + testThisStr);
-      case TestLevels.complex:
-        String testThisStr = 'This is our string to test $i';
-        String innerString2 = "inner $i str";
-        //shows broken nesting      
-        //WRONG  output
-        outStr =pred( 'Hello '+ pblue(testThisStr) + pgreen(' Here is inner ${pyellow(innerString2)} and end of green') + ' and end of red');
-      case TestLevels.simple:
-        //AnsiPen pred = AnsiPen()..red();
-        outStr = pred( 'Hello ' );
-    }
-    if(printSomeResults == ResultsToPrint.none) {
-      // do nothing
-    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
-      print(outStr);
-    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
-      print(outStr);
-    }
-  }
-  print('\nBuilt in USING ANSICOLORS performance test:'.green);
-  print('Iterations: $iterations');
-  print('Total time: ${stopwatch2.elapsedMilliseconds} ms');
-  print('Average time per iteration: ${stopwatch2.elapsedMilliseconds / iterations} ms');
-
-  double percent_2div1 = stopwatch2.elapsedMilliseconds/stopwatch.elapsedMilliseconds;
-
-  double percent_1div2 = stopwatch.elapsedMilliseconds/stopwatch2.elapsedMilliseconds;
-
-  print('PERCENT diff    ansicolors/quectocolors = ${(percent_2div1*100.0).toStringAsFixed(2)}%  (<100% means faster)  quectocolors/ansicolors =${(percent_1div2*100.0).toStringAsFixed(2)}%'.blueBright);
-
-
-  print('-----------------------------------------------\n'.magentaBright );
-  //Test the string extensions version
-  final stopwatch3 = Stopwatch()..start();
-
-  for (var i = 0; i < iterations; i++) {
-    late final String outStr;
-    switch(testMode) {
-      case TestLevels.largerandom_complex:
-        String testThisStr = 'This is our string to test $i'+randomBigString;
-        String innerString2 = "inner $i str"+randomBigString;
-        outStr = ('Hello '+ randomBigString.blue + ' Here is inner ${innerString2.yellow} and end of green'.green + ' and end of red').red;   
-      case TestLevels.complex:
-        String testThisStr = 'This is our string to test $i';
-        String innerString2 = "inner $i str";
-    
-        outStr = ('Hello '+ testThisStr.blue + ' Here is inner ${(innerString2.yellow)} and end of green'.green + ' and end of red').red;
-      case TestLevels.simple:
-        outStr = 'Hello '.red;
-    }
-    if(printSomeResults == ResultsToPrint.none) {
-      // do nothing
-    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
-      print(outStr);
-    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
-      print(outStr);
-    }
-  }
-  stopwatch3.stop();
-
-  print('\nBuilt in USING STRING EXTENTIONS performance test:'.yellow);
-  print('Iterations: $iterations');
-  print('Total time: ${stopwatch3.elapsedMilliseconds} ms');
-  print('Average time per iteration: ${stopwatch3.elapsedMilliseconds / iterations} ms');
-
-  double percent_3div1 = stopwatch3.elapsedMilliseconds/stopwatch.elapsedMilliseconds;
-  double percent_1div3 = stopwatch.elapsedMilliseconds/stopwatch3.elapsedMilliseconds;
-
-  double percent_3div2 = stopwatch3.elapsedMilliseconds/stopwatch2.elapsedMilliseconds;
-  double percent_2div3 = stopwatch2.elapsedMilliseconds/stopwatch3.elapsedMilliseconds;
-
-
-  print('PERCENT diff    quecto strings/quectocolors = ${(percent_3div1*100.0).toStringAsFixed(2)}%  (<100% means faster)  quectocolors/quecto strings = ${(percent_1div3*100.0).toStringAsFixed(2)}%'.blueBright);
-  print('PERCENT diff    quecto strings/ANSICOLORS = ${(percent_3div2*100.0).toStringAsFixed(2)}%  (<100% means faster)   ANSICOLORS/quecto strings = ${(percent_2div3*100.0).toStringAsFixed(2)}%'.cyan);
-}
+QuectoColors quectoColors = QuectoColors();

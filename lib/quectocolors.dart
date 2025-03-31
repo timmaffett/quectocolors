@@ -1,5 +1,6 @@
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+import "supports_ansi_color.dart";
+export "supports_ansi_color.dart";
+export "src/quectocolors_ansipen.dart";   // AnsiPen compatible syntax
+export "src/quectocolors.dart";  // QuectoColors, Quecto
+
+
