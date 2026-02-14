@@ -101,7 +101,7 @@ class AnsiPen {
 final class QuectoColorsStatic {
 
   static String debugOut( String instr ) {
-    return instr.replaceAll('\u001B[', 'ESC[');
+    return instr.replaceAll('\x1B[', 'ESC[');
   }
 
   static QuectoStyler createStyler( final int ansiOpen, final int ansiClose ) {
@@ -112,22 +112,22 @@ final class QuectoColorsStatic {
 
 
 //WAY 1
-//    final String openCode = '\u001B[${ansiOpen}m';
-//    final String closeCode = '\u001B[${ansiClose}m';
+//    final String openCode = '\x1B[${ansiOpen}m';
+//    final String closeCode = '\x1B[${ansiClose}m';
 
 
 // WAY2
 //    final sb = StringBuffer();
 //
 //
-//    sb.write('\u001B[');
+//    sb.write('\x1B[');
 //    sb.write(ansiOpen);
 //    sb.write('m');
 //   
 //    final String openCode = sb.toString();
 //    sb.clear();
 //
-//    sb.write('\u001B[');
+//    sb.write('\x1B[');
 //    sb.write(ansiClose);
 //    sb.write('m');
 //
@@ -137,20 +137,20 @@ final class QuectoColorsStatic {
     final sb = StringBuffer();
 
 
-    sb.write('\u001B[${ansiOpen}m');
+    sb.write('\x1B[${ansiOpen}m');
    
     final String openCode = sb.toString();
     sb.clear();
 
-    sb.write('\u001B[${ansiClose}m');
+    sb.write('\x1B[${ansiClose}m');
 
     final String closeCode = sb.toString();
 WAY 3*/
 
-    final String openCode = '\u001B[${ansiOpen}m';
-    final String closeCode = '\u001B[${ansiClose}m';
-    final sb = StringBuffer(openCode); // create our string buffer here - so scoped for each styler but not having to be created each styling
+    final String openCode = '\x1B[${ansiOpen}m';
+    final String closeCode = '\x1B[${ansiClose}m';
     final closeLength = closeCode.length;
+    final sb = StringBuffer(); // create our string buffer here - so scoped for each styler but not having to be created each styling
 
     return (String string) {
       //final String string = input;//.toString();
@@ -196,7 +196,7 @@ WAY 3*/
       
       //USE OUTER - fastest
       sb.clear();  // we are using persistently scoped sb, so clear and start fresh
-      sb.write(openCode );
+      sb.write(openCode);
       
       int lastIndex = 0;
 

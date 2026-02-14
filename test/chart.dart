@@ -1,3 +1,5 @@
+import 'perftest_harness.dart';
+
 class AsciiChart {
   static String unicode1_8thBlocks = '▏▏▍▌▋▊	▉█';
   static String unicodeLowerBlocks = '▄	▅';
@@ -30,20 +32,24 @@ class AsciiChart {
     return sb.toString();
   }
 
-  static String getBlocks( double totalBlocks, double unitsPerBlock ) {
+  static String getLineBarGraph( double totalValue, double unitsPerBlock, String unitsPerBlockString ) {
     StringBuffer sb = StringBuffer();
     double where = 0;
-    while(where<totalBlocks) {
+    while(where<totalValue) {
       sb.write(tick);
       where+=unitsPerBlock;
     }
-    sb.write(' ${totalBlocks.toStringAsFixed(1)} ms');
+    sb.write(' ${totalValue.toStringAsFixed(1)} $unitsPerBlockString');
     return sb.toString();
   }
 
 
   static String namePaddedToLength( String name, int pad ) {
-    return name.padRight(pad);
+    if(name.length>pad) {
+      return name.substring(0,pad);  // take first `pad` chars
+    } else {
+      return name.padRight(pad);
+    }
   }
 
 

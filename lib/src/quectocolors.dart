@@ -100,7 +100,7 @@ typedef QuectoStyler = String Function(String);
 final class QuectoColors {
 
   static String debugOut( String instr ) {
-    return instr.replaceAll('\u001B[', 'ESC[');
+    return instr.replaceAll('\x1B[', 'ESC[');
   }
 
   static QuectoStyler createStyler( final int ansiOpen, final int ansiClose ) {
@@ -111,22 +111,22 @@ final class QuectoColors {
 
 
 //WAY 1
-//    final String openCode = '\u001B[${ansiOpen}m';
-//    final String closeCode = '\u001B[${ansiClose}m';
+//    final String openCode = '\x1B[${ansiOpen}m';
+//    final String closeCode = '\x1B[${ansiClose}m';
 
 
 // WAY2
 //    final sb = StringBuffer();
 //
 //
-//    sb.write('\u001B[');
+//    sb.write('\x1B[');
 //    sb.write(ansiOpen);
 //    sb.write('m');
 //   
 //    final String openCode = sb.toString();
 //    sb.clear();
 //
-//    sb.write('\u001B[');
+//    sb.write('\x1B[');
 //    sb.write(ansiClose);
 //    sb.write('m');
 //
@@ -136,20 +136,20 @@ final class QuectoColors {
     final sb = StringBuffer();
 
 
-    sb.write('\u001B[${ansiOpen}m');
+    sb.write('\x1B[${ansiOpen}m');
    
     final String openCode = sb.toString();
     sb.clear();
 
-    sb.write('\u001B[${ansiClose}m');
+    sb.write('\x1B[${ansiClose}m');
 
     final String closeCode = sb.toString();
 WAY 3*/
 
-    final String openCode = '\u001B[${ansiOpen}m';
-    final String closeCode = '\u001B[${ansiClose}m';
-    final sb = StringBuffer(openCode); // create our string buffer here - so scoped for each styler but not having to be created each styling
+    final String openCode = '\x1B[${ansiOpen}m';
+    final String closeCode = '\x1B[${ansiClose}m';
     final closeLength = closeCode.length;
+    final sb = StringBuffer(); // create our string buffer here - so scoped for each styler but not having to be created each styling
 
     return (String string) {
       //final String string = input.toString();  // we just take string instead, the conversion overhead is not worth it
@@ -195,7 +195,7 @@ WAY 3*/
       
       //USE OUTER - fastest
       sb.clear();  // we are using persistently scoped sb, so clear and start fresh
-      sb.write(openCode );
+      sb.write(openCode);
       
       int lastIndex = 0;
 
@@ -233,6 +233,8 @@ WAY 3*/
   final QuectoStyler inverse = createStyler(7, 27);
   final QuectoStyler hidden = createStyler(8, 28);
   final QuectoStyler strikethrough = createStyler(9, 29);
+
+  
   final QuectoStyler black = createStyler(30, 39);
   final QuectoStyler red = createStyler(31, 39);
   final QuectoStyler green = createStyler(32, 39);
@@ -242,6 +244,8 @@ WAY 3*/
   final QuectoStyler cyan = createStyler(36, 39);
   final QuectoStyler white = createStyler(37, 39);
   final QuectoStyler gray = createStyler(90, 39);
+
+
   final QuectoStyler bgBlack = createStyler(40, 49);
   final QuectoStyler bgRed = createStyler(41, 49);
   final QuectoStyler bgGreen = createStyler(42, 49);
@@ -251,6 +255,7 @@ WAY 3*/
   final QuectoStyler bgCyan = createStyler(46, 49);
   final QuectoStyler bgWhite = createStyler(47, 49);
   final QuectoStyler bgGray = createStyler(100, 49);
+
   final QuectoStyler redBright = createStyler(91, 39);
   final QuectoStyler greenBright = createStyler(92, 39);
   final QuectoStyler yellowBright = createStyler(93, 39);
@@ -258,6 +263,7 @@ WAY 3*/
   final QuectoStyler magentaBright = createStyler(95, 39);
   final QuectoStyler cyanBright = createStyler(96, 39);
   final QuectoStyler whiteBright = createStyler(97, 39);
+
   final QuectoStyler bgRedBright = createStyler(101, 49);
   final QuectoStyler bgGreenBright = createStyler(102, 49);
   final QuectoStyler bgYellowBright = createStyler(103, 49);

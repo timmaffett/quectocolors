@@ -50,29 +50,29 @@ void main() async {
   //LINUX ONLY//});
 
 
-  int width = stdout.terminalColumns - 1;
+  int consoleWidth = stdout.terminalColumns - 1;
 
   //print('Determined terminal to be $width columns and $height rows ');
   
-  if(width<0) {
-    width = 80;
+  if(consoleWidth<0) {
+    consoleWidth = 80;
   }
 
   //NOT WORK ON WINDOWSfinal width = stdout.terminalColumns;
-  final equalBarString = List.generate(width, (_) => '=').join();
+  final equalBarString = List.generate(consoleWidth, (_) => '=').join();
 
   print(equalBarString.red);
   print(equalBarString.green);
   print(equalBarString.blue);
   print(equalBarString.yellow);
-  print(centerStrOnTerminal('QuectoColors Performance Testing Suite', width));
+  print(centerStrOnTerminal('QuectoColors Performance Testing Suite', consoleWidth));
   print('');
   print('');
 
-  runTests( TestLevels.simple, width);
-  runTests( TestLevels.simple_3styles, width );
-  runTests( TestLevels.complex, width );
-  //runTests( TestLevels.largerandom_complex );
+  runTests( TestLevels.simple, consoleWidth);
+  runTests( TestLevels.simple_3styles, consoleWidth );
+  runTests( TestLevels.complex, consoleWidth );
+  //runTests( TestLevels.largerandom_complex );  // this just shows time factor of .indexOf() on huge buffers, but really isn't representative sample of real world use
   
 }
 
@@ -132,7 +132,7 @@ void runTests( TestLevels testMode, int consoleWidth ) {
   print('Iterations: $iterations');
   print('Total time: ${stopwatch0.elapsedMilliseconds} ms');
   print('Average time per iteration: ${stopwatch0.elapsedMilliseconds / iterations} ms');
-  final timeQuectoColorsStatic = stopwatch0.elapsedMilliseconds / iterations * 100000.0;
+  final timeQuectoColorsStatic = stopwatch0.elapsedMilliseconds / iterations;
 
 
   print('-----------------------------------------------\n'.magentaBright );
@@ -172,7 +172,7 @@ QuectoStyler simpleStyle = quectoColors.red;
   print('Iterations: $iterations');
   print('Total time: ${stopwatch1.elapsedMilliseconds} ms');
   print('Average time per iteration: ${stopwatch1.elapsedMilliseconds / iterations} ms');
-  final timeQuectoColors = stopwatch1.elapsedMilliseconds / iterations * 100000.0;
+  final timeQuectoColors = stopwatch1.elapsedMilliseconds / iterations;
 
   double percent_1div0 = stopwatch1.elapsedMilliseconds/stopwatch0.elapsedMilliseconds;
   double percent_0div1 = stopwatch0.elapsedMilliseconds/stopwatch1.elapsedMilliseconds;
@@ -241,7 +241,7 @@ stylerList.add( quectoColors.magentaBright );
   print('Iterations: $iterations');
   print('Total time: ${stopwatch2.elapsedMilliseconds} ms');
   print('Average time per iteration: ${stopwatch2.elapsedMilliseconds / iterations} ms');
-  final timeAnsiOrig = stopwatch2.elapsedMilliseconds / iterations * 100000.0;
+  final timeAnsiOrig = stopwatch2.elapsedMilliseconds / iterations;
   double percent_2div1 = stopwatch2.elapsedMilliseconds/stopwatch1.elapsedMilliseconds;
 
   double percent_1div2 = stopwatch1.elapsedMilliseconds/stopwatch2.elapsedMilliseconds;
@@ -293,7 +293,7 @@ stylerList.add( quectoColors.magentaBright );
   print('Iterations: $iterations');
   print('Total time: ${stopwatch3.elapsedMilliseconds} ms');
   print('Average time per iteration: ${stopwatch3.elapsedMilliseconds / iterations} ms');
-  final timeQuectoStrings = stopwatch3.elapsedMilliseconds / iterations * 100000.0; 
+  final timeQuectoStrings = stopwatch3.elapsedMilliseconds / iterations; 
 
   double percent_3div1 = stopwatch3.elapsedMilliseconds/stopwatch1.elapsedMilliseconds;
   double percent_1div3 = stopwatch1.elapsedMilliseconds/stopwatch3.elapsedMilliseconds;
@@ -322,9 +322,9 @@ stylerList.add( quectoColors.magentaBright );
   // make pen outside loop for fastest possible
   AnsiPen pred = AnsiPen()..red();
   AnsiPen pgreen = AnsiPen()..green();   // AnsiColor compatible notation `..`
-  AnsiPen pblue = AnsiPen().blue;
-  AnsiPen pyellow= AnsiPen().yellow;
-  AnsiPen p3Styles = AnsiPen().red.italic.strikethrough;  // simplified notation
+  AnsiPen pblue = AnsiPen().blue();
+  AnsiPen pyellow= AnsiPen().yellow();
+  AnsiPen p3Styles = AnsiPen().red().italic.strikethrough;  // simplified notation
   for (var i = 0; i < iterations; i++) {
     late final String outStr;
     switch(testMode) {
@@ -360,7 +360,7 @@ stylerList.add( quectoColors.magentaBright );
   print('Iterations: $iterations');
   print('Total time: ${stopwatch4.elapsedMilliseconds} ms');
   print('Average time per iteration: ${stopwatch4.elapsedMilliseconds / iterations} ms');
-  final timeQuectoAni = stopwatch4.elapsedMilliseconds / iterations * 100000.0;
+  final timeQuectoAni = stopwatch4.elapsedMilliseconds / iterations;
 
   double percent_2div4 = stopwatch2.elapsedMilliseconds/stopwatch4.elapsedMilliseconds;
 
@@ -422,7 +422,7 @@ stylerList.add( quectoColors.magentaBright );
   print('Iterations: $iterations');
   print('Total time: ${stopwatch5.elapsedMilliseconds} ms');
   print('Average time per iteration: ${stopwatch5.elapsedMilliseconds / iterations} ms');
-  final timeChalkDart = stopwatch5.elapsedMilliseconds / iterations * 100000.0;
+  final timeChalkDart = stopwatch5.elapsedMilliseconds / iterations;
 
   double percent_2div5 = stopwatch2.elapsedMilliseconds/stopwatch5.elapsedMilliseconds;
   double percent_5div2 = stopwatch5.elapsedMilliseconds/stopwatch2.elapsedMilliseconds;
@@ -447,7 +447,7 @@ stylerList.add( quectoColors.magentaBright );
 
   // get max width of any name
   int maxNameLen = 0;
-  for(int i=0;i<timePerIterationList.length;i++) {
+  for(int i=0;i<chartLineAlgorithmName.length;i++) {
     String name =chartLineAlgorithmName[i];
     if(name.length>maxNameLen) maxNameLen = name.length;
   }
@@ -458,11 +458,11 @@ stylerList.add( quectoColors.magentaBright );
   List<String> percentChart = [];
   List<String> timePerIterationChart = [];
 
-  double maxTime = findMax(timePerIterationList);
+  double maxTime = findMax(timePerIterationList) * 1000000.0; // convert milliseconds to nanoseconds
   double unitsPerBlock = maxTime/roomForChart.toDouble(); //  100 block wide chart should fit largest time
   for(int i=0;i<timePerIterationList.length;i++) {
     String name =chartLineAlgorithmName[i];
-    timePerIterationChart.add( stylerList[i]( name + AsciiChart.getBlocks(timePerIterationList[i], unitsPerBlock) ) );
+    timePerIterationChart.add( stylerList[i]( name + AsciiChart.getLineBarGraph( (timePerIterationList[i] * 1000000.0), unitsPerBlock, 'ns') ) );  // convert milliseconds to nanoseconds
   }
 
   double maxPercent = findMax(percentList);

@@ -8,4 +8,4 @@ import 'src/supports_ansi.dart'
 ///
 /// Handy for turning on and off embedded colors without commenting out code.
 
-bool ansiColorDisabled = false; //!supportsAnsiColor;
+bool ansiColorDisabled = !supportsAnsiColor;

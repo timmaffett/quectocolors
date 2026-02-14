@@ -3,8 +3,10 @@ import 'package:quectocolors/src/quectocolors.dart';
 class AnsiPen {
   List<QuectoStyler> styleStack = [];
 
+  /// Treat a pen instance as a function such that `pen('msg')` is the same as
+  /// `pen.write('msg')`.
   dynamic call([Object? input]) {
-    if(input==null) return this;
+    if(input==null) return this;  // getter called without args
     String string = input.toString();
     // Faster handle common cases directly without loop
     switch(styleStack.length) {
@@ -27,6 +29,9 @@ class AnsiPen {
     //ORIG//}
     //ORIG//return string;
   }
+
+  // mirror AnsiPen write() method as alternative to call()
+  dynamic write(Object? input) => call(input);
 
   static final _reset = QuectoColors.createStyler(0, 0);
   static final _bold = QuectoColors.createStyler(1, 22);
@@ -71,10 +76,90 @@ class AnsiPen {
   static final _bgWhiteBright = QuectoColors.createStyler(107, 49);
 
 
+  // These method signatures match the original AnsiPen color methods
+  // We don't implement `up`, `down`
+
   AnsiPen get reset {
     styleStack.add(_reset);
     return this;
   }
+  AnsiPen black({bool bg = false, bool bold = false}) {
+    switch ((bg,bold)) {
+      case (true, true): styleStack.add(_bgGray); break;
+      case (true, false): styleStack.add(_bgBlack); break;
+      case (false, true): styleStack.add(_gray); break;
+      case (false, false): styleStack.add(_black); break;
+    }
+    return this;
+  }
+  AnsiPen red({bool bg = false, bool bold = false}) {
+    switch ((bg,bold)) {
+      case (true, true): styleStack.add(_bgRedBright); break;
+      case (true, false): styleStack.add(_bgRed); break;
+      case (false, true): styleStack.add(_redBright); break;
+      case (false, false): styleStack.add(_red); break;
+    }
+    return this;
+  }
+  AnsiPen green({bool bg = false, bool bold = false}) {
+    switch ((bg,bold)) {
+      case (true, true): styleStack.add(_bgGreenBright); break;
+      case (true, false): styleStack.add(_bgGreen); break;
+      case (false, true): styleStack.add(_greenBright); break;
+      case (false, false): styleStack.add(_green); break;
+    }
+    return this;
+  }
+  AnsiPen yellow({bool bg = false, bool bold = false}) {
+    switch ((bg,bold)) {
+      case (true, true): styleStack.add(_bgYellowBright); break;
+      case (true, false): styleStack.add(_bgYellow); break;
+      case (false, true): styleStack.add(_yellowBright); break;
+      case (false, false): styleStack.add(_yellow); break;
+    }
+    return this;
+  }
+  AnsiPen blue({bool bg = false, bool bold = false}) {
+    switch ((bg,bold)) {
+      case (true, true): styleStack.add(_bgBlueBright); break;
+      case (true, false): styleStack.add(_bgBlue); break;
+      case (false, true): styleStack.add(_blueBright); break;
+      case (false, false): styleStack.add(_blue); break;
+    }
+    return this;
+  }
+  AnsiPen magenta({bool bg = false, bool bold = false}) {
+    switch ((bg,bold)) {
+      case (true, true): styleStack.add(_bgMagentaBright); break;
+      case (true, false): styleStack.add(_bgMagenta); break;
+      case (false, true): styleStack.add(_magentaBright); break;
+      case (false, false): styleStack.add(_magenta); break;
+    }
+    return this;
+  }
+  AnsiPen cyan({bool bg = false, bool bold = false}) {
+    switch ((bg,bold)) {
+      case (true, true): styleStack.add(_bgCyanBright); break;
+      case (true, false): styleStack.add(_bgCyan); break;
+      case (false, true): styleStack.add(_cyanBright); break;
+      case (false, false): styleStack.add(_cyan); break;
+    }
+    return this;
+  }
+  AnsiPen white({bool bg = false, bool bold = false}) {
+    switch ((bg,bold)) {
+      case (true, true): styleStack.add(_bgWhiteBright); break;
+      case (true, false): styleStack.add(_bgWhite); break;
+      case (false, true): styleStack.add(_whiteBright); break;
+      case (false, false): styleStack.add(_white); break;
+    }
+    return this;
+  }
+
+
+  //--------------------------------------------------------------------------
+  // These method match the QuectoColors color methods
+  
   AnsiPen get bold {
     styleStack.add(_bold);
     return this;
@@ -105,38 +190,6 @@ class AnsiPen {
   }
   AnsiPen get strikethrough {
     styleStack.add(_strikethrough);
-    return this;
-  }
-  AnsiPen get black {
-    styleStack.add(_black);
-    return this;
-  }
-  AnsiPen get red {
-    styleStack.add(_red);
-    return this;
-  }
-  AnsiPen get green {
-    styleStack.add(_green);
-    return this;
-  }
-  AnsiPen get yellow {
-    styleStack.add(_yellow);
-    return this;
-  }
-  AnsiPen get blue {
-    styleStack.add(_blue);
-    return this;
-  }
-  AnsiPen get magenta {
-    styleStack.add(_magenta);
-    return this;
-  }
-  AnsiPen get cyan {
-    styleStack.add(_cyan);
-    return this;
-  }
-  AnsiPen get white {
-    styleStack.add(_white);
     return this;
   }
   AnsiPen get gray {
