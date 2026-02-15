@@ -41,6 +41,7 @@ styling library for Dart with correct nested color support.
 - **AnsiPen fluent interface** (`AnsiPen()..red()..bold`) — compatible with the
   `ansicolor` package's `AnsiPen` API including `rgb()`, `gray()`/`grey()`,
   `xterm()`, `down`, `up`, `write()`, `call()`, and cascade (`..`) syntax.
+  *BUT UNLIKE the ansicolor package we properly support nesting of styles!*
 
 ### Plain Fast Path
 

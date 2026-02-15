@@ -1,4 +1,6 @@
-// Full QuectoColors with CSS/X11 named color extensions.
-// Use this import when you want 'text'.cornflowerBlue style string extensions.
-export "quectocolors.dart";
+import "supports_ansi_color.dart";
+export "supports_ansi_color.dart";
+export "src/quectocolors.dart";  // QuectoColors, QuectoStyler, QuectoPlain
+// Adds String extensions for all the CSS/X11 color names.
 export "src/quectocolors_css.g.dart";
+
