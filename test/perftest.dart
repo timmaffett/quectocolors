@@ -6,7 +6,6 @@ import 'package:chalkdart/chalk.dart' as ChalkDart;
 import 'package:quectocolors/quectocolors.dart';
 import 'package:quectocolors/ansipen.dart';
 import 'package:ansicolor/ansicolor.dart' as AnsiColor;
-import 'package:quectocolors/quectocolors_static.dart';
 
 import 'chart.dart';
 import 'dart:io';
@@ -107,15 +106,15 @@ void runTests( TestLevels testMode, int consoleWidth ) {
       case TestLevels.largerandom_complex:
         String testThisStr = 'This is our string to test $i'+randomBigString;
         String innerString2 = "inner $i str"+randomBigString;
-        outStr = QuectoColorsStatic.red( 'Hello '+ QuectoColorsStatic.blue(randomBigString) + QuectoColorsStatic.green(' Here is inner ${QuectoColorsStatic.yellow(innerString2)} and end of green') + testThisStr);   
+        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(randomBigString) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + testThisStr);   
       case TestLevels.complex:
         String testThisStr = 'This is our string to test $i';
         String innerString2 = "inner $i str";
-        outStr = QuectoColorsStatic.red( 'Hello '+ QuectoColorsStatic.blue(testThisStr) + QuectoColorsStatic.green(' Here is inner ${QuectoColorsStatic.yellow(innerString2)} and end of green') + ' and end of red');
+        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(testThisStr) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + ' and end of red');
       case TestLevels.simple:
-        outStr = QuectoColorsStatic.red( 'Hello ');
+        outStr = QuectoColors.red( 'Hello ');
       case TestLevels.simple_3styles:
-        outStr = QuectoColorsStatic.strikethrough( QuectoColorsStatic.italic( QuectoColorsStatic.red( 'Hello ')));
+        outStr = QuectoColors.strikethrough( QuectoColors.italic( QuectoColors.red( 'Hello ')));
     }
     if(printSomeResults == ResultsToPrint.none) {
       // do nothing
@@ -138,7 +137,7 @@ void runTests( TestLevels testMode, int consoleWidth ) {
   print('-----------------------------------------------\n'.magentaBright );
 
   final stopwatch1 = Stopwatch()..start();
-QuectoStyler simpleStyle = quectoColors.red;
+QuectoStyler simpleStyle = QuectoColors.red;
 
   for (var i = 0; i < iterations; i++) {
     late final String outStr;
@@ -146,16 +145,16 @@ QuectoStyler simpleStyle = quectoColors.red;
       case TestLevels.largerandom_complex:
         String testThisStr = 'This is our string to test $i'+randomBigString;
         String innerString2 = "inner $i str"+randomBigString;
-        outStr = quectoColors.red( 'Hello '+ quectoColors.blue(randomBigString) + quectoColors.green(' Here is inner ${quectoColors.yellow(innerString2)} and end of green') + testThisStr);   
+        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(randomBigString) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + testThisStr);   
       case TestLevels.complex:
         String testThisStr = 'This is our string to test $i';
         String innerString2 = "inner $i str";
-        outStr = quectoColors.red( 'Hello '+ quectoColors.blue(testThisStr) + quectoColors.green(' Here is inner ${quectoColors.yellow(innerString2)} and end of green') + ' and end of red');
+        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(testThisStr) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + ' and end of red');
       case TestLevels.simple:
         //outStr = QuectoColors.red( 'Hello ');
         outStr = simpleStyle('Hello ');
       case TestLevels.simple_3styles:
-        outStr = quectoColors.strikethrough( quectoColors.italic( quectoColors.red( 'Hello ')));
+        outStr = QuectoColors.strikethrough( QuectoColors.italic( QuectoColors.red( 'Hello ')));
     }
     if(printSomeResults == ResultsToPrint.none) {
       // do nothing
@@ -185,7 +184,7 @@ QuectoStyler simpleStyle = quectoColors.red;
   chartLineAlgorithmName.add( nameFormatted );
   percentList.add(percent_0div1*100.0);
   timePerIterationList.add(timeQuectoColorsStatic);
-  stylerList.add( quectoColors.cyanBright );
+  stylerList.add( QuectoColors.cyanBright );
 
 
 nameFormatted = AsciiChart.namePaddedToLength('QuectoColors', 20);
@@ -193,7 +192,7 @@ nameFormatted = AsciiChart.namePaddedToLength('QuectoColors', 20);
 chartLineAlgorithmName.add( nameFormatted );
 percentList.add(100.0); // 100% for QuectoColors, as that is our 'reference' alogorithm
 timePerIterationList.add(timeQuectoColors);
-stylerList.add( quectoColors.magentaBright );
+stylerList.add( QuectoColors.magentaBright );
 
   print('-----------------------------------------------\n'.magentaBright );
   //Test the built in substring method for comparison.
@@ -253,7 +252,7 @@ stylerList.add( quectoColors.magentaBright );
   chartLineAlgorithmName.add( nameFormatted );
   percentList.add(percent_2div1*100.0);
   timePerIterationList.add(timeAnsiOrig);
-  stylerList.add( quectoColors.greenBright );
+  stylerList.add( QuectoColors.greenBright );
 
 
 
@@ -311,7 +310,7 @@ stylerList.add( quectoColors.magentaBright );
   chartLineAlgorithmName.add( nameFormatted );
   percentList.add(percent_3div1*100.0);
   timePerIterationList.add(timeQuectoStrings);
-  stylerList.add( quectoColors.yellow );
+  stylerList.add( QuectoColors.yellow );
 
 
 
@@ -377,7 +376,7 @@ stylerList.add( quectoColors.magentaBright );
   chartLineAlgorithmName.add( nameFormatted );
   percentList.add(percent_4div1*100.0);
   timePerIterationList.add(timeQuectoAni);
-  stylerList.add( quectoColors.red );
+  stylerList.add( QuectoColors.red );
 
 
 
@@ -441,7 +440,7 @@ stylerList.add( quectoColors.magentaBright );
   chartLineAlgorithmName.add( nameFormatted );
   percentList.add(percent_5div1*100.0);
   timePerIterationList.add(timeChalkDart);
-  stylerList.add( quectoColors.blueBright );
+  stylerList.add( QuectoColors.blueBright );
 
   double findMax(List<double> numbers) => numbers.reduce((a, b) => a > b ? a : b);
 

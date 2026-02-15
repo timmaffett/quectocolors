@@ -6,8 +6,6 @@ import 'package:chalkdart/chalk.dart' as ChalkDart;
 import 'package:quectocolors/quectocolors.dart';
 import 'package:quectocolors/ansipen.dart';
 import 'package:ansicolor/ansicolor.dart' as AnsiColor;
-import 'package:quectocolors/quectocolors_static.dart';
-import 'package:quectocolors/src/quectocolors_alt.dart';
 
 import 'chart.dart';
 import 'dart:io';
@@ -230,29 +228,20 @@ void runTestSet( {required TestVersion testVersion, required int terminalWidth})
 
   SetOfPerformanceTests perfSet = SetOfPerformanceTests(testVersion: testVersion, terminalWidth: terminalWidth, iterations: iterations, printSomeResults: printSomeResults, printSomeNumberOfLinesAtStartAndEnd: printSomeNumberOfLinesAtStartAndEnd );
   
-  perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuectoColorsStatic', algorithmDescription: 'accessing Static methods directly',
-                                          colorForAlgorithm: QuectoColorsStatic.cyanBright, testFunction: testQuectoColorsStatic );
-  
-  int referenceAlgIndex = perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuectoColors', algorithmDescription: 'quectoColors instance methods version',
-                                          colorForAlgorithm: QuectoColorsStatic.magentaBright, testFunction: testQuectoColors );
-
-  perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuectoColorsAlt', algorithmDescription: 'quectoColors ALTERNATE instance methods version',
-                                          colorForAlgorithm: QuectoColorsStatic.gray, testFunction: testQuectoColorsAlt );
-
+  int referenceAlgIndex = perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuectoColors', algorithmDescription: 'QuectoColors static methods with nesting support',
+                                          colorForAlgorithm: QuectoColors.magentaBright, testFunction: testQuectoColors );
 
   perfSet.runPerformanceTestOnTestFunction(algorithmName: 'AnsiColors Package', algorithmDescription: 'original AnsiColors package - does not support nesting or complex styles',
-                                          colorForAlgorithm: QuectoColorsStatic.greenBright, testFunction: testOriginalAnsi );
+                                          colorForAlgorithm: QuectoColors.greenBright, testFunction: testOriginalAnsi );
   perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuClrs String Extensions', algorithmDescription: 'QuectoColors style functions directly accessed off any String variable',
-                                          colorForAlgorithm: QuectoColorsStatic.yellow, testFunction: testQuectoStringExtensions );
+                                          colorForAlgorithm: QuectoColors.yellow, testFunction: testQuectoStringExtensions );
   perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuClrs AnsiPen Compatible', algorithmDescription: 'QuectoColors only requiring import change to "quectocolors/ansipen.dart"',
-                                          colorForAlgorithm: QuectoColorsStatic.red, testFunction: testAnsiPenCompatibleQuectoColors );
+                                          colorForAlgorithm: QuectoColors.red, testFunction: testAnsiPenCompatibleQuectoColors );
   perfSet.runPerformanceTestOnTestFunction(algorithmName: 'ChalkDart Package', algorithmDescription: 'Using ChalkDart package',
-                                          colorForAlgorithm: QuectoColorsStatic.blueBright, testFunction: testChalkDart );
+                                          colorForAlgorithm: QuectoColors.blueBright, testFunction: testChalkDart );
 
-  perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuClrs Plain (instance)', algorithmDescription: 'QuectoColors plain fast path - zero ESC scanning, caller guarantees no nesting',
-                                          colorForAlgorithm: QuectoColorsStatic.whiteBright, testFunction: testQuectoColorsPlain );
-  perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuClrs Plain (static)', algorithmDescription: 'QuectoColorsStatic plain fast path - zero ESC scanning, caller guarantees no nesting',
-                                          colorForAlgorithm: QuectoColorsStatic.white, testFunction: testQuectoColorsStaticPlain );
+  perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuectoPlain', algorithmDescription: 'QuectoPlain fast path - zero ESC scanning, caller guarantees no nesting',
+                                          colorForAlgorithm: QuectoColors.whiteBright, testFunction: testQuectoColorsPlain );
 
   perfSet.summarizeResults(referenceIndexFor100Percent:referenceAlgIndex);
  
@@ -263,7 +252,7 @@ void runTestSet( {required TestVersion testVersion, required int terminalWidth})
 
 
 
-Stopwatch testQuectoColorsStatic(int iterations, TestVersion testMode ) {
+Stopwatch testQuectoColors(int iterations, TestVersion testMode ) {
   String outStr;
 
   final stopwatch = Stopwatch()..start();
@@ -272,62 +261,27 @@ Stopwatch testQuectoColorsStatic(int iterations, TestVersion testMode ) {
       case TestVersion.largerandom_complex:
         String testThisStr = 'This is our string to test $i'+randomBigString;
         String innerString2 = "inner $i str"+randomBigString;
-        outStr = QuectoColorsStatic.red( 'Hello '+ QuectoColorsStatic.blue(randomBigString) + QuectoColorsStatic.green(' Here is inner ${QuectoColorsStatic.yellow(innerString2)} and end of green') + testThisStr);   
+        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(randomBigString) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + testThisStr);
       case TestVersion.complex:
         String testThisStr = 'This is our string to test $i';
         String innerString2 = "inner $i str";
-        outStr = QuectoColorsStatic.red( 'Hello '+ QuectoColorsStatic.blue(testThisStr) + QuectoColorsStatic.green(' Here is inner ${QuectoColorsStatic.yellow(innerString2)} and end of green') + ' and end of red');
+        outStr = QuectoColors.red( 'Hello '+ QuectoColors.blue(testThisStr) + QuectoColors.green(' Here is inner ${QuectoColors.yellow(innerString2)} and end of green') + ' and end of red');
       case TestVersion.simple:
-        outStr = QuectoColorsStatic.red( 'Hello ');
+        outStr = QuectoColors.red( 'Hello ');
       case TestVersion.simple_3styles:
-        outStr = QuectoColorsStatic.strikethrough( QuectoColorsStatic.italic( QuectoColorsStatic.red( 'Hello ')));
+        outStr = QuectoColors.strikethrough( QuectoColors.italic( QuectoColors.red( 'Hello ')));
     }
     if(printSomeResults == ResultsToPrint.none) {
       // do nothing
     } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
       print(outStr);
-      //print(QuectoColors.debugOut(outStr));
-    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
-      print(outStr);
-    }
-  } 
-  stopwatch.stop();
-
-  return stopwatch;
-}
-
-Stopwatch testQuectoColors(int iterations, TestVersion testMode ) {
-  final stopwatch1 = Stopwatch()..start();
-  QuectoStyler simpleStyle = quectoColors.red;
-
-  for (var i = 0; i < iterations; i++) {
-    late final String outStr;
-    switch(testMode) {
-      case TestVersion.largerandom_complex:
-        String testThisStr = 'This is our string to test $i'+randomBigString;
-        String innerString2 = "inner $i str"+randomBigString;
-        outStr = quectoColors.red( 'Hello '+ quectoColors.blue(randomBigString) + quectoColors.green(' Here is inner ${quectoColors.yellow(innerString2)} and end of green') + testThisStr);   
-      case TestVersion.complex:
-        String testThisStr = 'This is our string to test $i';
-        String innerString2 = "inner $i str";
-        outStr = quectoColors.red( 'Hello '+ quectoColors.blue(testThisStr) + quectoColors.green(' Here is inner ${quectoColors.yellow(innerString2)} and end of green') + ' and end of red');
-      case TestVersion.simple:
-        //outStr = QuectoColors.red( 'Hello ');
-        outStr = simpleStyle('Hello ');
-      case TestVersion.simple_3styles:
-        outStr = quectoColors.strikethrough( quectoColors.italic( quectoColors.red( 'Hello ')));
-    }
-    if(printSomeResults == ResultsToPrint.none) {
-      // do nothing
-    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
-      print(outStr);
-      //print(QuectoColors.debugOut(outStr));
     } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
       print(outStr);
     }
   }
-  stopwatch1.stop();
-  return stopwatch1;
+  stopwatch.stop();
+
+  return stopwatch;
 }
 
 Stopwatch testOriginalAnsi(int iterations, TestVersion testMode ) {
@@ -490,64 +444,29 @@ Stopwatch testChalkDart(int iterations, TestVersion testMode) {
 
 
 
-Stopwatch testQuectoColorsAlt(int iterations, TestVersion testMode ) {
-  final stopwatch6 = Stopwatch()..start();
-  QuectoStyler simpleStyle =  quectoColorsAlt.red;
-
-  for (var i = 0; i < iterations; i++) {
-    late final String outStr;
-    switch(testMode) {
-      case TestVersion.largerandom_complex:
-        String testThisStr = 'This is our string to test $i'+randomBigString;
-        String innerString2 = "inner $i str"+randomBigString;
-        outStr = quectoColorsAlt.red( 'Hello '+ quectoColorsAlt.blue(randomBigString) + quectoColorsAlt.green(' Here is inner ${quectoColorsAlt.yellow(innerString2)} and end of green') + testThisStr);   
-      case TestVersion.complex:
-        String testThisStr = 'This is our string to test $i';
-        String innerString2 = "inner $i str";
-        outStr = quectoColorsAlt.red( 'Hello '+ quectoColorsAlt.blue(testThisStr) + quectoColorsAlt.green(' Here is inner ${quectoColorsAlt.yellow(innerString2)} and end of green') + ' and end of red');
-      case TestVersion.simple:
-        //outStr = quectoColorsAlt.red( 'Hello ');
-        outStr = simpleStyle('Hello ');
-      case TestVersion.simple_3styles:
-        outStr = quectoColorsAlt.strikethrough( quectoColorsAlt.italic( quectoColorsAlt.red( 'Hello ')));
-    }
-    if(printSomeResults == ResultsToPrint.none) {
-      // do nothing
-    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
-      print(outStr);
-      //print(quectoColorsAlt.debugOut(outStr));
-    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
-      print(outStr);
-    }
-  }
-  stopwatch6.stop();
-  return stopwatch6;
-}
-
 // Plain fast path tests — zero ESC scanning, pure string interpolation.
 // For simple/simple_3styles: caller guarantees input is plain text.
 // For complex: uses plain for ALL calls to show raw speed ceiling
 // (output nesting will be incorrect, but demonstrates the performance floor).
 
 Stopwatch testQuectoColorsPlain(int iterations, TestVersion testMode ) {
-  final stopwatch7 = Stopwatch()..start();
-  QuectoStyler simpleStyle = quectoColors.plain.red;
+  String outStr;
 
+  final stopwatch = Stopwatch()..start();
   for (var i = 0; i < iterations; i++) {
-    late final String outStr;
     switch(testMode) {
       case TestVersion.largerandom_complex:
         String testThisStr = 'This is our string to test $i'+randomBigString;
         String innerString2 = "inner $i str"+randomBigString;
-        outStr = quectoColors.plain.red( 'Hello '+ quectoColors.plain.blue(randomBigString) + quectoColors.plain.green(' Here is inner ${quectoColors.plain.yellow(innerString2)} and end of green') + testThisStr);
+        outStr = QuectoPlain.red( 'Hello '+ QuectoPlain.blue(randomBigString) + QuectoPlain.green(' Here is inner ${QuectoPlain.yellow(innerString2)} and end of green') + testThisStr);
       case TestVersion.complex:
         String testThisStr = 'This is our string to test $i';
         String innerString2 = "inner $i str";
-        outStr = quectoColors.plain.red( 'Hello '+ quectoColors.plain.blue(testThisStr) + quectoColors.plain.green(' Here is inner ${quectoColors.plain.yellow(innerString2)} and end of green') + ' and end of red');
+        outStr = QuectoPlain.red( 'Hello '+ QuectoPlain.blue(testThisStr) + QuectoPlain.green(' Here is inner ${QuectoPlain.yellow(innerString2)} and end of green') + ' and end of red');
       case TestVersion.simple:
-        outStr = simpleStyle('Hello ');
+        outStr = QuectoPlain.red('Hello ');
       case TestVersion.simple_3styles:
-        outStr = quectoColors.plain.strikethrough( quectoColors.plain.italic( quectoColors.plain.red( 'Hello ')));
+        outStr = QuectoPlain.strikethrough( QuectoPlain.italic( QuectoPlain.red( 'Hello ')));
     }
     if(printSomeResults == ResultsToPrint.none) {
       // do nothing
@@ -557,38 +476,6 @@ Stopwatch testQuectoColorsPlain(int iterations, TestVersion testMode ) {
       print(outStr);
     }
   }
-  stopwatch7.stop();
-  return stopwatch7;
-}
-
-Stopwatch testQuectoColorsStaticPlain(int iterations, TestVersion testMode ) {
-  final stopwatch8 = Stopwatch()..start();
-  QuectoStyler simpleStyle = QuectoColorsStatic.plain.red;
-
-  for (var i = 0; i < iterations; i++) {
-    late final String outStr;
-    switch(testMode) {
-      case TestVersion.largerandom_complex:
-        String testThisStr = 'This is our string to test $i'+randomBigString;
-        String innerString2 = "inner $i str"+randomBigString;
-        outStr = QuectoColorsStatic.plain.red( 'Hello '+ QuectoColorsStatic.plain.blue(randomBigString) + QuectoColorsStatic.plain.green(' Here is inner ${QuectoColorsStatic.plain.yellow(innerString2)} and end of green') + testThisStr);
-      case TestVersion.complex:
-        String testThisStr = 'This is our string to test $i';
-        String innerString2 = "inner $i str";
-        outStr = QuectoColorsStatic.plain.red( 'Hello '+ QuectoColorsStatic.plain.blue(testThisStr) + QuectoColorsStatic.plain.green(' Here is inner ${QuectoColorsStatic.plain.yellow(innerString2)} and end of green') + ' and end of red');
-      case TestVersion.simple:
-        outStr = simpleStyle('Hello ');
-      case TestVersion.simple_3styles:
-        outStr = QuectoColorsStatic.plain.strikethrough( QuectoColorsStatic.plain.italic( QuectoColorsStatic.plain.red( 'Hello ')));
-    }
-    if(printSomeResults == ResultsToPrint.none) {
-      // do nothing
-    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
-      print(outStr);
-    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
-      print(outStr);
-    }
-  }
-  stopwatch8.stop();
-  return stopwatch8;
+  stopwatch.stop();
+  return stopwatch;
 }

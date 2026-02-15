@@ -1,12 +1,8 @@
 import 'package:quectocolors/quectocolors.dart';
-import 'package:quectocolors/quectocolors_static.dart';
-import 'package:quectocolors/src/quectocolors_alt.dart';
 import 'package:ansicolor/ansicolor.dart' as AnsiColor;
 import 'dart:math';
 
-// Quick A/B test: compare QuectoColors (with new codeUnitAt scan)
-// against original AnsiColor, no terminal required.
-// QuectoColorsAlt still uses the OLD indexOf code — serves as baseline.
+// Quick A/B test: compare QuectoColors vs AnsiColor, no terminal required.
 
 const int iterations = 500000;
 
@@ -41,49 +37,25 @@ void main() {
   print('=== SIMPLE: single color on short string ===');
   print('Iterations: $iterations\n');
 
-  bench('QuectoColors  (NEW codeUnitAt)  red("Hello ")',
-      () => quectoColors.red('Hello '));
-  bench('QuectoStatic  (NEW codeUnitAt)  red("Hello ")',
-      () => QuectoColorsStatic.red('Hello '));
-  bench('QuectoAlt     (OLD indexOf)     red("Hello ")',
-      () => quectoColorsAlt.red('Hello '));
-  bench('AnsiColor                       red("Hello ")',
+  bench('QuectoColors  red("Hello ")',
+      () => QuectoColors.red('Hello '));
+  bench('AnsiColor     red("Hello ")',
       () => acRed('Hello '));
 
   print('\n=== SIMPLE 3-STYLES: strikethrough(italic(red(...))) ===\n');
 
-  bench('QuectoColors  (NEW codeUnitAt)',
-      () => quectoColors.strikethrough(quectoColors.italic(quectoColors.red('Hello '))));
-  bench('QuectoStatic  (NEW codeUnitAt)',
-      () => QuectoColorsStatic.strikethrough(QuectoColorsStatic.italic(QuectoColorsStatic.red('Hello '))));
-  bench('QuectoAlt     (OLD indexOf)',
-      () => quectoColorsAlt.strikethrough(quectoColorsAlt.italic(quectoColorsAlt.red('Hello '))));
+  bench('QuectoColors  strikethrough(italic(red(...)))',
+      () => QuectoColors.strikethrough(QuectoColors.italic(QuectoColors.red('Hello '))));
 
   print('\n=== COMPLEX: nested colors (200-char random strings) ===\n');
 
   final string = randomString;
 
-  bench('QuectoColors  (NEW codeUnitAt)', () =>
-      quectoColors.red('Hello ' +
-          quectoColors.blue(string) +
-          quectoColors.green('Here is ' +
-              quectoColors.yellow(string) +
-              ' end') +
-          ' end of red'));
-
-  bench('QuectoStatic  (NEW codeUnitAt)', () =>
-      QuectoColorsStatic.red('Hello ' +
-          QuectoColorsStatic.blue(string) +
-          QuectoColorsStatic.green('Here is ' +
-              QuectoColorsStatic.yellow(string) +
-              ' end') +
-          ' end of red'));
-
-  bench('QuectoAlt     (OLD indexOf)', () =>
-      quectoColorsAlt.red('Hello ' +
-          quectoColorsAlt.blue(string) +
-          quectoColorsAlt.green('Here is ' +
-              quectoColorsAlt.yellow(string) +
+  bench('QuectoColors  nested', () =>
+      QuectoColors.red('Hello ' +
+          QuectoColors.blue(string) +
+          QuectoColors.green('Here is ' +
+              QuectoColors.yellow(string) +
               ' end') +
           ' end of red'));
 
@@ -95,7 +67,7 @@ void main() {
               ' end') +
           ' end of red'));
 
-  bench('String ext    (NEW via QuectoStatic)', () =>
+  bench('String ext    (.red etc)', () =>
       ('Hello ' +
           string.blue +
           ('Here is ' + string.yellow + ' end').green +
@@ -103,33 +75,29 @@ void main() {
 
   print('\n=== PLAIN FAST PATH: single color, known-plain text ===\n');
 
-  bench('QuectoColors  plain.red("Hello ")',
-      () => quectoColors.plain.red('Hello '));
-  bench('QuectoStatic  plain.red("Hello ")',
-      () => QuectoColorsStatic.plain.red('Hello '));
+  bench('QuectoPlain   red("Hello ")',
+      () => QuectoPlain.red('Hello '));
   bench('QuectoColors  (normal) red("Hello ")',
-      () => quectoColors.red('Hello '));
+      () => QuectoColors.red('Hello '));
   bench('AnsiColor     (no nesting)  red("Hello ")',
       () => acRed('Hello '));
 
   print('\n=== PLAIN FAST PATH: 200-char random string ===\n');
 
-  bench('QuectoColors  plain.red(200-char)',
-      () => quectoColors.plain.red(string));
-  bench('QuectoStatic  plain.red(200-char)',
-      () => QuectoColorsStatic.plain.red(string));
+  bench('QuectoPlain   red(200-char)',
+      () => QuectoPlain.red(string));
   bench('QuectoColors  (normal) red(200-char)',
-      () => quectoColors.red(string));
+      () => QuectoColors.red(string));
   bench('AnsiColor     (no nesting)  red(200-char)',
       () => acRed(string));
 
   // Verify correctness
   print('\n=== CORRECTNESS CHECK ===');
-  final nested = quectoColors.red('A${quectoColors.blue("B")}C');
+  final nested = QuectoColors.red('A${QuectoColors.blue("B")}C');
   print('QuectoColors: ${nested.replaceAll('\x1B[', 'ESC[')}');
   final acNested = acRed('A${acBlue("B")}C');
   print('AnsiColor:    ${acNested.replaceAll('\x1B[', 'ESC[')}');
   // Plain path check
-  final plainResult = quectoColors.plain.red('Hello');
+  final plainResult = QuectoPlain.red('Hello');
   print('Plain:        ${plainResult.replaceAll('\x1B[', 'ESC[')}');
 }

@@ -1,110 +1,11 @@
-import 'dart:math';
-
 import "/supports_ansi_color.dart";
-
-//import 'package:ansicolor/ansicolor.dart';
-
-///import tty from 'node:tty';
-///
-///// eslint-disable-next-line no-warning-comments
-///// TODO: Use a better method when it's added to Node.js (https://github.com/nodejs/node/pull/40240)
-///// Lots of optionals here to support Deno.
-///const hasColors = tty?.WriteStream?.prototype?.hasColors?.() ?? false;
-
-/*
-
-
-/// Globally enable or disable [AnsiPen] settings.
-///
-/// Note: defaults to environment support; but can be overridden.
-///
-/// Handy for turning on and off embedded colors without commenting out code.
-bool ansiColorDisabled = !supportsAnsiColor;
-
-@Deprecated(
-    'Will be removed in future releases in favor of [ansiColorDisabled]')
-// ignore: non_constant_identifier_names
-bool get color_disabled => ansiColorDisabled;
-@Deprecated(
-    'Will be removed in future releases in favor of [ansiColorDisabled]')
-// ignore: non_constant_identifier_names
-set color_disabled(bool disabled) => ansiColorDisabled = disabled;
-
-/// Pen attributes for foreground and background colors.
-///
-/// Use the pen in string interpolation to output ansi codes.
-/// Use [up] in string interpolation to globally reset colors.
-class AnsiPen {
-  /// Treat a pen instance as a function such that `pen('msg')` is the same as
-  /// `pen.write('msg')`.
-  String call(Object msg) => write(msg);
-
-  /// Allow pen colors to be used in a string.
-  ///
-  /// Note: Once the pen is down, its attributes remain in effect till they are
-  ///     changed by another pen or [up].
-  @override
-  String toString() {
-    if (ansiColorDisabled) return '';
-    if (!_dirty) return _pen;
-
-    final sb = StringBuffer();
-    if (_fcolor != -1) {
-      sb.write('${ansiEscape}38;5;${_fcolor}m');
-    }
-
-    if (_bcolor != -1) {
-      sb.write('${ansiEscape}48;5;${_bcolor}m');
-    }
-
-    _dirty = false;
-    _pen = sb.toString();
-    return _pen;
-  }
-
-  /// Returns control codes to change the terminal colors.
-  String get down => '${this}';
-
-  /// Resets all pen attributes in the terminal.
-  String get up => ansiColorDisabled ? '' : ansiDefault;
-
-  /// Write the [msg.toString()] with the pen's current settings and then
-  /// reset all attributes.
-  String write(Object msg) => '${this}$msg$up';
-
-  void black({bool bg = false, bool bold = false}) => _std(0, bold, bg);
-  void red({bool bg = false, bool bold = false}) => _std(1, bold, bg);
-  void green({bool bg = false, bool bold = false}) => _std(2, bold, bg);
-  void yellow({bool bg = false, bool bold = false}) => _std(3, bold, bg);
-  void blue({bool bg = false, bool bold = false}) => _std(4, bold, bg);
-  void magenta({bool bg = false, bool bold = false}) => _std(5, bold, bg);
-  void cyan({bool bg = false, bool bold = false}) => _std(6, bold, bg);
-  void white({bool bg = false, bool bold = false}) => _std(7, bold, bg);
-
-  /// Sets the pen color to the rgb value between 0.0..1.0.
-  void rgb({num r = 1.0, num g = 1.0, num b = 1.0, bool bg = false}) => xterm(
-      (r.clamp(0.0, 1.0) * 5).toInt() * 36 +
-          (g.clamp(0.0, 1.0) * 5).toInt() * 6 +
-          (b.clamp(0.0, 1.0) * 5).toInt() +
-          16,
-      bg: bg);
-
-  /// Sets the pen color to a grey scale value between 0.0 and 1.0.
-  void gray({num level = 1.0, bool bg = false}) =>
-      xterm(232 + (level.clamp(0.0, 1.0) * 23).round(), bg: bg);
-
-*/
 
 typedef QuectoStyler = String Function(String);
 
 /// Known-plain fast path stylers — ZERO ESC scanning.
 /// Use when the caller guarantees the input string contains no nested
 /// ANSI escape codes (i.e., it's plain text or a literal string).
-/// This matches ansicolor's speed exactly: pure '$openCode$string$closeCode'.
-///
-/// Usage:
-///   quectoColors.plain.red('Hello')        // instance-based
-///   QuectoColorsStatic.plain.red('Hello')   // static version
+/// Access via `QuectoPlain.red('Hello')`.
 final class QuectoPlain {
 
   /// Creates a plain styler that just wraps the string with open/close codes.
@@ -118,51 +19,51 @@ final class QuectoPlain {
     return (String string) => '$openCode$string$closeCode';
   }
 
-  final QuectoStyler reset = createPlainStyler(0, 0);
-  final QuectoStyler bold = createPlainStyler(1, 22);
-  final QuectoStyler dim = createPlainStyler(2, 22);
-  final QuectoStyler italic = createPlainStyler(3, 23);
-  final QuectoStyler underline = createPlainStyler(4, 24);
-  final QuectoStyler overline = createPlainStyler(53, 55);
-  final QuectoStyler inverse = createPlainStyler(7, 27);
-  final QuectoStyler hidden = createPlainStyler(8, 28);
-  final QuectoStyler strikethrough = createPlainStyler(9, 29);
+  static final QuectoStyler reset = createPlainStyler(0, 0);
+  static final QuectoStyler bold = createPlainStyler(1, 22);
+  static final QuectoStyler dim = createPlainStyler(2, 22);
+  static final QuectoStyler italic = createPlainStyler(3, 23);
+  static final QuectoStyler underline = createPlainStyler(4, 24);
+  static final QuectoStyler overline = createPlainStyler(53, 55);
+  static final QuectoStyler inverse = createPlainStyler(7, 27);
+  static final QuectoStyler hidden = createPlainStyler(8, 28);
+  static final QuectoStyler strikethrough = createPlainStyler(9, 29);
 
-  final QuectoStyler black = createPlainStyler(30, 39);
-  final QuectoStyler red = createPlainStyler(31, 39);
-  final QuectoStyler green = createPlainStyler(32, 39);
-  final QuectoStyler yellow = createPlainStyler(33, 39);
-  final QuectoStyler blue = createPlainStyler(34, 39);
-  final QuectoStyler magenta = createPlainStyler(35, 39);
-  final QuectoStyler cyan = createPlainStyler(36, 39);
-  final QuectoStyler white = createPlainStyler(37, 39);
-  final QuectoStyler gray = createPlainStyler(90, 39);
+  static final QuectoStyler black = createPlainStyler(30, 39);
+  static final QuectoStyler red = createPlainStyler(31, 39);
+  static final QuectoStyler green = createPlainStyler(32, 39);
+  static final QuectoStyler yellow = createPlainStyler(33, 39);
+  static final QuectoStyler blue = createPlainStyler(34, 39);
+  static final QuectoStyler magenta = createPlainStyler(35, 39);
+  static final QuectoStyler cyan = createPlainStyler(36, 39);
+  static final QuectoStyler white = createPlainStyler(37, 39);
+  static final QuectoStyler gray = createPlainStyler(90, 39);
 
-  final QuectoStyler bgBlack = createPlainStyler(40, 49);
-  final QuectoStyler bgRed = createPlainStyler(41, 49);
-  final QuectoStyler bgGreen = createPlainStyler(42, 49);
-  final QuectoStyler bgYellow = createPlainStyler(43, 49);
-  final QuectoStyler bgBlue = createPlainStyler(44, 49);
-  final QuectoStyler bgMagenta = createPlainStyler(45, 49);
-  final QuectoStyler bgCyan = createPlainStyler(46, 49);
-  final QuectoStyler bgWhite = createPlainStyler(47, 49);
-  final QuectoStyler bgGray = createPlainStyler(100, 49);
+  static final QuectoStyler bgBlack = createPlainStyler(40, 49);
+  static final QuectoStyler bgRed = createPlainStyler(41, 49);
+  static final QuectoStyler bgGreen = createPlainStyler(42, 49);
+  static final QuectoStyler bgYellow = createPlainStyler(43, 49);
+  static final QuectoStyler bgBlue = createPlainStyler(44, 49);
+  static final QuectoStyler bgMagenta = createPlainStyler(45, 49);
+  static final QuectoStyler bgCyan = createPlainStyler(46, 49);
+  static final QuectoStyler bgWhite = createPlainStyler(47, 49);
+  static final QuectoStyler bgGray = createPlainStyler(100, 49);
 
-  final QuectoStyler redBright = createPlainStyler(91, 39);
-  final QuectoStyler greenBright = createPlainStyler(92, 39);
-  final QuectoStyler yellowBright = createPlainStyler(93, 39);
-  final QuectoStyler blueBright = createPlainStyler(94, 39);
-  final QuectoStyler magentaBright = createPlainStyler(95, 39);
-  final QuectoStyler cyanBright = createPlainStyler(96, 39);
-  final QuectoStyler whiteBright = createPlainStyler(97, 39);
+  static final QuectoStyler redBright = createPlainStyler(91, 39);
+  static final QuectoStyler greenBright = createPlainStyler(92, 39);
+  static final QuectoStyler yellowBright = createPlainStyler(93, 39);
+  static final QuectoStyler blueBright = createPlainStyler(94, 39);
+  static final QuectoStyler magentaBright = createPlainStyler(95, 39);
+  static final QuectoStyler cyanBright = createPlainStyler(96, 39);
+  static final QuectoStyler whiteBright = createPlainStyler(97, 39);
 
-  final QuectoStyler bgRedBright = createPlainStyler(101, 49);
-  final QuectoStyler bgGreenBright = createPlainStyler(102, 49);
-  final QuectoStyler bgYellowBright = createPlainStyler(103, 49);
-  final QuectoStyler bgBlueBright = createPlainStyler(104, 49);
-  final QuectoStyler bgMagentaBright = createPlainStyler(105, 49);
-  final QuectoStyler bgCyanBright = createPlainStyler(106, 49);
-  final QuectoStyler bgWhiteBright = createPlainStyler(107, 49);
+  static final QuectoStyler bgRedBright = createPlainStyler(101, 49);
+  static final QuectoStyler bgGreenBright = createPlainStyler(102, 49);
+  static final QuectoStyler bgYellowBright = createPlainStyler(103, 49);
+  static final QuectoStyler bgBlueBright = createPlainStyler(104, 49);
+  static final QuectoStyler bgMagentaBright = createPlainStyler(105, 49);
+  static final QuectoStyler bgCyanBright = createPlainStyler(106, 49);
+  static final QuectoStyler bgWhiteBright = createPlainStyler(107, 49);
 }
 
 final class QuectoColors {
@@ -219,6 +120,12 @@ WAY 3*/
     final String closeCode = '\x1B[${ansiClose}m';
     final closeLength = closeCode.length;
     final sb = StringBuffer(); // create our string buffer here - so scoped for each styler but not having to be created each styling
+    sb.write(openCode); // pre-warm the StringBuffer so it has some internal
+    sb.clear();         // capacity before the closure captures it — avoids
+                        // a reallocation on the first nesting-path call.
+                        // (discovered via QuectoColorsAlt which did this
+                        // incidentally and benchmarked ~5-8% faster on
+                        // nesting cases)
 
 
 // --- CLOSE CODE SEARCH & NESTING HISTORY ---
@@ -421,110 +328,95 @@ END WAY 3 */
 /* END WAY 4 */
   }
 
-  final QuectoStyler reset = createStyler(0, 0);
-  final QuectoStyler bold = createStyler(1, 22);
-  final QuectoStyler dim = createStyler(2, 22);
-  final QuectoStyler italic = createStyler(3, 23);
-  final QuectoStyler underline = createStyler(4, 24);
-  final QuectoStyler overline = createStyler(53, 55);
-  final QuectoStyler inverse = createStyler(7, 27);
-  final QuectoStyler hidden = createStyler(8, 28);
-  final QuectoStyler strikethrough = createStyler(9, 29);
+  static final QuectoStyler reset = createStyler(0, 0);
+  static final QuectoStyler bold = createStyler(1, 22);
+  static final QuectoStyler dim = createStyler(2, 22);
+  static final QuectoStyler italic = createStyler(3, 23);
+  static final QuectoStyler underline = createStyler(4, 24);
+  static final QuectoStyler overline = createStyler(53, 55);
+  static final QuectoStyler inverse = createStyler(7, 27);
+  static final QuectoStyler hidden = createStyler(8, 28);
+  static final QuectoStyler strikethrough = createStyler(9, 29);
 
-  
-  final QuectoStyler black = createStyler(30, 39);
-  final QuectoStyler red = createStyler(31, 39);
-  final QuectoStyler green = createStyler(32, 39);
-  final QuectoStyler yellow = createStyler(33, 39);
-  final QuectoStyler blue = createStyler(34, 39);
-  final QuectoStyler magenta = createStyler(35, 39);
-  final QuectoStyler cyan = createStyler(36, 39);
-  final QuectoStyler white = createStyler(37, 39);
-  final QuectoStyler gray = createStyler(90, 39);
+  static final QuectoStyler black = createStyler(30, 39);
+  static final QuectoStyler red = createStyler(31, 39);
+  static final QuectoStyler green = createStyler(32, 39);
+  static final QuectoStyler yellow = createStyler(33, 39);
+  static final QuectoStyler blue = createStyler(34, 39);
+  static final QuectoStyler magenta = createStyler(35, 39);
+  static final QuectoStyler cyan = createStyler(36, 39);
+  static final QuectoStyler white = createStyler(37, 39);
+  static final QuectoStyler gray = createStyler(90, 39);
 
+  static final QuectoStyler bgBlack = createStyler(40, 49);
+  static final QuectoStyler bgRed = createStyler(41, 49);
+  static final QuectoStyler bgGreen = createStyler(42, 49);
+  static final QuectoStyler bgYellow = createStyler(43, 49);
+  static final QuectoStyler bgBlue = createStyler(44, 49);
+  static final QuectoStyler bgMagenta = createStyler(45, 49);
+  static final QuectoStyler bgCyan = createStyler(46, 49);
+  static final QuectoStyler bgWhite = createStyler(47, 49);
+  static final QuectoStyler bgGray = createStyler(100, 49);
 
-  final QuectoStyler bgBlack = createStyler(40, 49);
-  final QuectoStyler bgRed = createStyler(41, 49);
-  final QuectoStyler bgGreen = createStyler(42, 49);
-  final QuectoStyler bgYellow = createStyler(43, 49);
-  final QuectoStyler bgBlue = createStyler(44, 49);
-  final QuectoStyler bgMagenta = createStyler(45, 49);
-  final QuectoStyler bgCyan = createStyler(46, 49);
-  final QuectoStyler bgWhite = createStyler(47, 49);
-  final QuectoStyler bgGray = createStyler(100, 49);
+  static final QuectoStyler redBright = createStyler(91, 39);
+  static final QuectoStyler greenBright = createStyler(92, 39);
+  static final QuectoStyler yellowBright = createStyler(93, 39);
+  static final QuectoStyler blueBright = createStyler(94, 39);
+  static final QuectoStyler magentaBright = createStyler(95, 39);
+  static final QuectoStyler cyanBright = createStyler(96, 39);
+  static final QuectoStyler whiteBright = createStyler(97, 39);
 
-  final QuectoStyler redBright = createStyler(91, 39);
-  final QuectoStyler greenBright = createStyler(92, 39);
-  final QuectoStyler yellowBright = createStyler(93, 39);
-  final QuectoStyler blueBright = createStyler(94, 39);
-  final QuectoStyler magentaBright = createStyler(95, 39);
-  final QuectoStyler cyanBright = createStyler(96, 39);
-  final QuectoStyler whiteBright = createStyler(97, 39);
-
-  final QuectoStyler bgRedBright = createStyler(101, 49);
-  final QuectoStyler bgGreenBright = createStyler(102, 49);
-  final QuectoStyler bgYellowBright = createStyler(103, 49);
-  final QuectoStyler bgBlueBright = createStyler(104, 49);
-  final QuectoStyler bgMagentaBright = createStyler(105, 49);
-  final QuectoStyler bgCyanBright = createStyler(106, 49);
-  final QuectoStyler bgWhiteBright = createStyler(107, 49);
-
-  /// Known-plain fast path: zero ESC scanning, pure string interpolation.
-  /// Use when caller guarantees the input has no nested ANSI escape codes.
-  /// Example: quectoColors.plain.red('Hello World')
-  final QuectoPlain plain = QuectoPlain();
+  static final QuectoStyler bgRedBright = createStyler(101, 49);
+  static final QuectoStyler bgGreenBright = createStyler(102, 49);
+  static final QuectoStyler bgYellowBright = createStyler(103, 49);
+  static final QuectoStyler bgBlueBright = createStyler(104, 49);
+  static final QuectoStyler bgMagentaBright = createStyler(105, 49);
+  static final QuectoStyler bgCyanBright = createStyler(106, 49);
+  static final QuectoStyler bgWhiteBright = createStyler(107, 49);
 }
 
 
-/* WE USE THE static versions as when COMPILED the static code is faster 
-
+/// String extensions for concise styling: `'text'.red`, `'text'.bold.italic`.
 extension QuectoColorsOnStrings on String {
-
-  static QuectoColors quectoColors = QuectoColors();
-
-  String get reset => quectoColors.reset(this);
-  String get bold => quectoColors.bold(this);
-  String get dim => quectoColors.dim(this);
-  String get italic => quectoColors.italic(this);
-  String get underline => quectoColors.underline(this);
-  String get overline => quectoColors.overline(this);
-  String get inverse => quectoColors.inverse(this);
-  String get hidden => quectoColors.hidden(this);
-  String get strikethrough => quectoColors.strikethrough(this);
-  String get black => quectoColors.black(this);
-  String get red => quectoColors.red(this);
-  String get green => quectoColors.green(this);
-  String get yellow => quectoColors.yellow(this);
-  String get blue => quectoColors.blue(this);
-  String get magenta => quectoColors.magenta(this);
-  String get cyan => quectoColors.cyan(this);
-  String get white => quectoColors.white(this);
-  String get gray => quectoColors.gray(this);
-  String get bgBlack => quectoColors.bgBlack(this);
-  String get bgRed => quectoColors.bgRed(this);
-  String get bgGreen => quectoColors.bgGreen(this);
-  String get bgYellow => quectoColors.bgYellow(this);
-  String get bgBlue => quectoColors.bgBlue(this);
-  String get bgMagenta => quectoColors.bgMagenta(this);
-  String get bgCyan => quectoColors.bgCyan(this);
-  String get bgWhite => quectoColors.bgWhite(this);
-  String get bgGray => quectoColors.bgGray(this);
-  String get redBright => quectoColors.redBright(this);
-  String get greenBright => quectoColors.greenBright(this);
-  String get yellowBright => quectoColors.yellowBright(this);
-  String get blueBright => quectoColors.blueBright(this);
-  String get magentaBright => quectoColors.magentaBright(this);
-  String get cyanBright => quectoColors.cyanBright(this);
-  String get whiteBright => quectoColors.whiteBright(this);
-  String get bgRedBright => quectoColors.bgRedBright(this);
-  String get bgGreenBright => quectoColors.bgGreenBright(this);
-  String get bgYellowBright => quectoColors.bgYellowBright(this);
-  String get bgBlueBright => quectoColors.bgBlueBright(this);
-  String get bgMagentaBright => quectoColors.bgMagentaBright(this);
-  String get bgCyanBright => quectoColors.bgCyanBright(this);
-  String get bgWhiteBright      => quectoColors.bgWhiteBright(this);
-
+  String get reset => QuectoColors.reset(this);
+  String get bold => QuectoColors.bold(this);
+  String get dim => QuectoColors.dim(this);
+  String get italic => QuectoColors.italic(this);
+  String get underline => QuectoColors.underline(this);
+  String get overline => QuectoColors.overline(this);
+  String get inverse => QuectoColors.inverse(this);
+  String get hidden => QuectoColors.hidden(this);
+  String get strikethrough => QuectoColors.strikethrough(this);
+  String get black => QuectoColors.black(this);
+  String get red => QuectoColors.red(this);
+  String get green => QuectoColors.green(this);
+  String get yellow => QuectoColors.yellow(this);
+  String get blue => QuectoColors.blue(this);
+  String get magenta => QuectoColors.magenta(this);
+  String get cyan => QuectoColors.cyan(this);
+  String get white => QuectoColors.white(this);
+  String get gray => QuectoColors.gray(this);
+  String get bgBlack => QuectoColors.bgBlack(this);
+  String get bgRed => QuectoColors.bgRed(this);
+  String get bgGreen => QuectoColors.bgGreen(this);
+  String get bgYellow => QuectoColors.bgYellow(this);
+  String get bgBlue => QuectoColors.bgBlue(this);
+  String get bgMagenta => QuectoColors.bgMagenta(this);
+  String get bgCyan => QuectoColors.bgCyan(this);
+  String get bgWhite => QuectoColors.bgWhite(this);
+  String get bgGray => QuectoColors.bgGray(this);
+  String get redBright => QuectoColors.redBright(this);
+  String get greenBright => QuectoColors.greenBright(this);
+  String get yellowBright => QuectoColors.yellowBright(this);
+  String get blueBright => QuectoColors.blueBright(this);
+  String get magentaBright => QuectoColors.magentaBright(this);
+  String get cyanBright => QuectoColors.cyanBright(this);
+  String get whiteBright => QuectoColors.whiteBright(this);
+  String get bgRedBright => QuectoColors.bgRedBright(this);
+  String get bgGreenBright => QuectoColors.bgGreenBright(this);
+  String get bgYellowBright => QuectoColors.bgYellowBright(this);
+  String get bgBlueBright => QuectoColors.bgBlueBright(this);
+  String get bgMagentaBright => QuectoColors.bgMagentaBright(this);
+  String get bgCyanBright => QuectoColors.bgCyanBright(this);
+  String get bgWhiteBright => QuectoColors.bgWhiteBright(this);
 }
-*/
-
-QuectoColors quectoColors = QuectoColors();
