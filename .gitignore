@@ -33,3 +33,6 @@ build/
 # Claude Code
 CLAUDE.md
 .claude/
+
+# executables
+*.exe
