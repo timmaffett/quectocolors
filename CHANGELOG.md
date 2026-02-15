@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.1
+- Explain quecto and fix import version in README.md
+
 ## 1.0.0
 
 Initial release of QuectoColors — a high-performance ANSI terminal color
