@@ -13,7 +13,9 @@
       "Bash(cmd //c \"test\\\\perftest_harness.exe\")",
       "Bash(test/perftest_harness.exe)",
       "Bash(ls -la \"C:\\\\src\\\\quectocolors\\\\faster_pkgs\\\\ansicolor-dart\\\\lib\"\" 2>&1 || echo \"Directory not found or error occurred \")",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(flutter test:*)",
+      "Bash(dart:*)"
     ]
   }
 }

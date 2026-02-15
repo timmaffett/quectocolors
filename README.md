@@ -7,7 +7,7 @@ QuectoColors provides multiple API styles for applying colors, text effects, and
 ## Features
 
 - **Correct nested color handling** — parent colors are automatically restored after inner styles close
-- **Multiple API styles** — instance methods, static methods, string extensions, and AnsiPen-compatible fluent API
+- **Multiple API styles** — static methods, string extensions, and AnsiPen-compatible fluent API
 - **Drop-in AnsiPen replacement** — migrate from the `ansicolor` package by changing a single import
 - **Plain fast path** — skip ESC scanning entirely for known-plain text, matching raw string interpolation speed
 - **Automatic ANSI detection** — detects terminal support on IO, web, and other platforms
@@ -28,49 +28,39 @@ dependencies:
 import 'package:quectocolors/quectocolors.dart';
 
 void main() {
-  print(quectoColors.red('This is red text'));
-  print(quectoColors.bold(quectoColors.blue('Bold blue text')));
+  print(QuectoColors.red('This is red text'));
+  print(QuectoColors.bold(QuectoColors.blue('Bold blue text')));
 
   // Nested colors work correctly:
-  print(quectoColors.red('Red ${quectoColors.blue("Blue")} Red again'));
+  print(QuectoColors.red('Red ${QuectoColors.blue("Blue")} Red again'));
 }
 ```
 
 ## API Styles
 
-QuectoColors offers four ways to style text, each suited to different use cases.
+QuectoColors offers three ways to style text, each suited to different use cases.
 
-### 1. Instance Methods
+### 1. Static Methods
+
+The primary API. All styles are static fields on the `QuectoColors` class.
 
 ```dart
 import 'package:quectocolors/quectocolors.dart';
 
-// Uses the global `quectoColors` instance
-print(quectoColors.red('Hello'));
-print(quectoColors.bold('Important'));
-print(quectoColors.bgYellow(quectoColors.black('Warning')));
+print(QuectoColors.red('Hello'));
+print(QuectoColors.bold('Important'));
+print(QuectoColors.bgYellow(QuectoColors.black('Warning')));
 
 // Nested colors — red is restored after blue closes
-print(quectoColors.red('Start ${quectoColors.blue("middle")} end'));
+print(QuectoColors.red('Start ${QuectoColors.blue("middle")} end'));
 ```
 
-### 2. Static Methods
-
-Better performance when compiled to native (AOT). Identical API, just accessed via the class name.
-
-```dart
-import 'package:quectocolors/quectocolors_static.dart';
-
-print(QuectoColorsStatic.red('Hello'));
-print(QuectoColorsStatic.bold(QuectoColorsStatic.italic('Styled')));
-```
-
-### 3. String Extensions
+### 2. String Extensions
 
 The most concise syntax. Chain styles directly on any `String`.
 
 ```dart
-import 'package:quectocolors/quectocolors_static.dart';
+import 'package:quectocolors/quectocolors.dart';
 
 print('Hello'.red);
 print('Important'.bold);
@@ -80,7 +70,7 @@ print('Hello'.red.italic.strikethrough);
 print(('Hello ${'world'.blue} !').red);
 ```
 
-### 4. AnsiPen-Compatible Fluent API
+### 3. AnsiPen-Compatible Fluent API
 
 A drop-in replacement for the `ansicolor` package's `AnsiPen`. Supports the same method signatures (`red()`, `blue(bg: true)`, etc.) plus additional styles like `italic`, `strikethrough`, and `overline` that `ansicolor` doesn't offer — and correctly handles nested colors.
 
@@ -100,28 +90,85 @@ See [Migrating from ansicolor](#migrating-from-ansicolor) below for details.
 
 ## Plain Fast Path
 
-When you know your input string contains no ANSI escape codes (it's a literal or plain text), you can use the `plain` accessor to skip ESC scanning entirely. This is the fastest possible styling — pure string interpolation with zero overhead.
+When you know your input string contains no ANSI escape codes (it's a literal or plain text), you can use `QuectoPlain` to skip ESC scanning entirely. This is the fastest possible styling — pure string interpolation with zero overhead.
 
 ```dart
-// Instance
-print(quectoColors.plain.red('Hello World'));
+import 'package:quectocolors/quectocolors.dart';
 
-// Static
-print(QuectoColorsStatic.plain.red('Hello World'));
+print(QuectoPlain.red('Hello World'));
+print(QuectoPlain.bold('Important'));
 ```
 
-**When to use `plain`:** Log messages, user input, file contents, string literals — any text you know doesn't already contain ANSI codes.
+**When to use `QuectoPlain`:** Log messages, user input, file contents, string literals — any text you know doesn't already contain ANSI codes.
 
-**When NOT to use `plain`:** When the input might contain styled text from other color calls (nested styling). Use the normal methods for that — they handle nesting automatically.
+**When NOT to use `QuectoPlain`:** When the input might contain styled text from other color calls (nested styling). Use `QuectoColors` for that — it handles nesting automatically.
 
-### Performance: plain vs normal
+### Performance: QuectoPlain vs QuectoColors
 
-| Scenario | `plain.red()` | `red()` (normal) | Speedup |
+| Scenario | `QuectoPlain.red()` | `QuectoColors.red()` | Speedup |
 |---|---|---|---|
-| Short string ("Hello") | ~2.4 ns | ~2.3 ns | ~same |
+| Short string ("Hello") | ~3.7 ns | ~4.5 ns | ~same |
 | 200-char plain string | ~251 ns | ~793 ns | **3.2x faster** |
 
 The plain fast path eliminates the ESC byte scan that the normal path performs. On short strings the scan is negligible, but on longer strings the difference is substantial.
+
+## Extended Colors
+
+QuectoColors supports the full range of terminal colors beyond the standard 16.
+
+### 256-Color Xterm Palette
+
+```dart
+// Foreground
+print(QuectoColors.ansi256(196)('Bright red'));
+print('Bright red'.ansi256(196));
+
+// Background
+print(QuectoColors.bgAnsi256(21)('Blue background'));
+
+// Underline color (terminals that support it)
+print(QuectoColors.underlineAnsi256(82)('Green underline'));
+```
+
+### 16M True Color (RGB)
+
+```dart
+// Foreground
+print(QuectoColors.rgb(255, 128, 0)('Orange text'));
+print('Orange text'.rgb(255, 128, 0));
+
+// Background
+print(QuectoColors.bgRgb(0, 0, 128)('Dark blue background'));
+
+// Underline color
+print(QuectoColors.underlineRgb(255, 0, 255)('Magenta underline'));
+```
+
+### RGB to Xterm256 Conversion
+
+```dart
+// Convert RGB to nearest xterm 256-color index
+int code = QuectoColors.rgbToAnsi256(255, 128, 0); // orange
+print(QuectoColors.ansi256(code)('Orange via xterm256'));
+```
+
+### Performance: Cache Extended Stylers in Hot Loops
+
+Extended color methods create a new closure per call. For hot loops, cache the styler:
+
+```dart
+final myStyle = QuectoColors.ansi256(196);  // cache once
+for (final line in lines) print(myStyle(line));  // reuse
+```
+
+### Plain Fast Path for Extended Colors
+
+`QuectoPlain` also supports extended colors for known-plain text:
+
+```dart
+print(QuectoPlain.ansi256(196)('Known-plain red'));
+print(QuectoPlain.rgb(255, 128, 0)('Known-plain orange'));
+```
 
 ## Available Styles
 
@@ -180,7 +227,7 @@ QuectoColors detects these nested close codes and re-injects the parent color:
 import 'package:quectocolors/quectocolors.dart';
 
 // QuectoColors output:
-print(quectoColors.red('Hello ${quectoColors.blue("world")} !'));
+print(QuectoColors.red('Hello ${QuectoColors.blue("world")} !'));
 // Produces: ESC[31mHello ESC[34mworldESC[31m !ESC[39m
 //                                       ^^^^^^
 //                     After "world", red is RESTORED. The " !" appears red.
@@ -192,8 +239,9 @@ print(quectoColors.red('Hello ${quectoColors.blue("world")} !'));
 |---|---|---|
 | Basic colors (8 + 8 bright) | Yes | Yes |
 | Background colors | Yes | Yes |
-| 256-color xterm palette | Yes | No (standard 16) |
-| RGB colors | Yes (via xterm mapping) | No |
+| 256-color xterm palette | Yes | Yes |
+| RGB colors | Yes (via xterm mapping) | Yes (direct + xterm mapping) |
+| 16M true color (24-bit RGB) | No | Yes |
 | Bold, italic, strikethrough, etc. | No | Yes |
 | Correct nested colors | **No** | **Yes** |
 | String extensions (`'text'.red`) | No | Yes |
@@ -206,10 +254,10 @@ Benchmarked with `dart compile exe` (AOT native), 100,000 iterations:
 
 | Test | QuectoColors | ansicolor | Notes |
 |---|---|---|---|
-| Simple `red("Hello")` | **~2 ns** | ~56 ns | QuectoColors uses pre-built closures |
-| 3-style nesting | **~7 ns** | ~90 ns | ansicolor can only do 1 style per pen |
-| Complex nested colors | **~540 ns** | ~970 ns | ansicolor output is incorrect here |
-| Complex (large strings) | **~650 ns** | ~1,100 ns | ansicolor output is incorrect here |
+| Simple `red("Hello")` | **~4 ns** | ~143 ns | QuectoColors uses pre-built closures |
+| 3-style nesting | **~10 ns** | ~235 ns | ansicolor can only do 1 style per pen |
+| Complex nested colors | **~1,000 ns** | ~1,970 ns | ansicolor output is incorrect here |
+| Complex (large strings) | **~1,800 ns** | ~3,125 ns | ansicolor output is incorrect here |
 
 QuectoColors is significantly faster across all test levels while also producing correct output for nested colors.
 
@@ -279,10 +327,10 @@ ChalkDart is a comprehensive styling toolkit:
 
 | Consideration | QuectoColors | ChalkDart |
 |---|---|---|
-| **Performance is critical** | Best choice — ~2 ns per simple style, optimized scanning | ~150-200 ns per simple style |
+| **Performance is critical** | Best choice — ~4 ns per simple style, optimized scanning | ~150-200 ns per simple style |
 | **Standard 16 colors + styles** | Full support | Full support |
-| **RGB / hex / HSL colors** | Not supported | Full support |
-| **256-color xterm palette** | Not supported | Full support |
+| **RGB / hex / HSL colors** | RGB supported | Full support (hex, HSL, HSV, HWB, LAB, XYZ) |
+| **256-color xterm palette** | Full support | Full support |
 | **Named CSS colors** | Not supported | 140+ colors |
 | **HTML output** | Not supported | Full support |
 | **Colored underlines** | Not supported | Full support |
@@ -296,27 +344,26 @@ Benchmarked with `dart compile exe` (AOT native), 100,000 iterations:
 
 | Test | QuectoColors | ChalkDart |
 |---|---|---|
-| Simple `red("Hello")` | **~2 ns** | ~152 ns |
-| 3-style nesting | **~7 ns** | ~142 ns |
-| Complex nested colors | **~540 ns** | ~2,575 ns |
-| Complex (large strings) | **~650 ns** | ~6,716 ns |
+| Simple `red("Hello")` | **~4 ns** | ~366 ns |
+| 3-style nesting | **~10 ns** | ~384 ns |
+| Complex nested colors | **~1,000 ns** | ~7,793 ns |
+| Complex (large strings) | **~1,800 ns** | ~18,352 ns |
 
 QuectoColors is faster across all levels. The gap is most significant in the complex cases with longer strings, where QuectoColors is roughly 5-10x faster. The simple cases show a large ratio but the absolute difference is small (nanoseconds). ChalkDart's additional per-call overhead comes from its richer architecture — chainable style resolution, dynamic argument handling, color level negotiation, and support for color models that QuectoColors doesn't offer.
 
 ### Choosing the right tool
 
 **Use QuectoColors when:**
-- You need the standard 16 ANSI colors and text styles (bold, italic, underline, strikethrough, etc.)
+- You need ANSI colors from standard 16 through 256-color xterm palette to 16M true color RGB
 - Performance matters — CLI tools that style thousands of lines, high-frequency logging, real-time output
 - You're migrating from the `ansicolor` package and want a drop-in replacement with correct nesting
 - You want minimal overhead and a small dependency footprint
 
 **Use ChalkDart when:**
-- You need RGB, hex, HSL, or any precise color specification
+- You need hex, HSL, HSV, HWB, LAB, or XYZ color specifications
 - You want access to named colors like `cornflowerBlue` or `darkSeaGreen`
-- You need the 256-color xterm palette for richer terminal UIs
 - You want HTML output mode for web dashboards, log viewers, or server-side rendering
-- You need advanced features like colored underlines, superscript/subscript, or alternative fonts
+- You need advanced features like superscript/subscript, or alternative fonts
 - You're building a feature-rich terminal UI where color expressiveness matters more than raw throughput
 
 Both packages handle nested colors correctly. QuectoColors covers the cases that the vast majority of terminal applications need, at the highest possible speed. ChalkDart covers everything else.
@@ -330,20 +377,23 @@ import 'package:quectocolors/quectocolors.dart';
 ansiColorDisabled = true;
 
 // All styling functions now return the input string unchanged
-print(quectoColors.red('Hello')); // prints "Hello" with no color codes
+print(QuectoColors.red('Hello')); // prints "Hello" with no color codes
 ```
 
 QuectoColors automatically detects whether the terminal supports ANSI escape codes. On platforms without support, colors are disabled by default.
 
 ## How It Works
 
-QuectoColors uses pre-built closures for maximum performance. At initialization time, `createStyler()` builds a closure for each style that:
+QuectoColors uses pre-built closures for maximum performance. Everything is all-static — there is exactly one set of closures for the entire package, shared by `QuectoColors`, `QuectoPlain`, `AnsiPen`, and the String extensions.
+
+At initialization time, `QuectoColors.createStyler()` builds a closure for each style that:
 
 1. Pre-computes the ANSI open/close code strings (`\x1B[31m` / `\x1B[39m` for red)
 2. Pre-caches the individual code unit bytes of the close code for fast scanning
-3. On each call, performs a single-pass scan for the ESC byte (`0x1B`) using unrolled `codeUnitAt()` comparisons
-4. If no nested close codes are found (the common case), returns a simple string interpolation: `'$openCode$string$closeCode'`
-5. If nested close codes are found, uses a StringBuffer with a do-while loop to re-inject the parent open code after each occurrence
+3. Pre-warms a StringBuffer (write + clear) so the closure's captured buffer has internal capacity from the start
+4. On each call, performs a single-pass scan for the ESC byte (`0x1B`) using unrolled `codeUnitAt()` comparisons
+5. If no nested close codes are found (the common case), returns a simple string interpolation: `'$openCode$string$closeCode'`
+6. If nested close codes are found, uses the pre-warmed StringBuffer with a do-while loop to re-inject the parent open code after each occurrence
 
 This approach avoids the overhead of `String.indexOf()` pattern matching and branches on close code length (4 vs 5 chars) at closure creation time rather than per-call.
 

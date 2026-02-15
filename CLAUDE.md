@@ -20,38 +20,49 @@ dart compile exe test/quick_perf.dart -o test/quick_perf.exe             # Quick
 
 ## Architecture
 
-### Multiple API Styles
+### All-Static Design
 
-The package exposes four ways to apply ANSI styling, each with different performance characteristics:
+Everything is all-static — there is exactly one set of closures for the entire package, shared by `QuectoColors`, `QuectoPlain`, `AnsiPen`, and the String extensions. All defined in `lib/src/quectocolors.dart`.
 
-1. **Instance methods** (`lib/src/quectocolors.dart`): `quectoColors.red("text")` — global `QuectoColors` instance with closures for each style
-2. **Static methods** (`lib/src/quectocolors_static.dart`): `QuectoColorsStatic.red("text")` — static finals, better performance when compiled
-3. **String extensions** (in `quectocolors_static.dart`): `"text".red` — extension on String via `QuectoColorsOnStringsStatic`
-4. **AnsiPen fluent interface** (`lib/src/quectocolors_ansipen.dart`): `AnsiPen().red().bold()("text")` — compatible with ansicolor package API
+### API Styles
+
+The package exposes three ways to apply ANSI styling:
+
+1. **Static methods** (`QuectoColors`): `QuectoColors.red("text")` — primary API, `static final` closures
+2. **String extensions** (`QuectoColorsOnStrings`): `"text".red` — extension on String, delegates to `QuectoColors.X(this)`
+3. **AnsiPen fluent interface** (`lib/src/quectocolors_ansipen.dart`): `AnsiPen().red().bold()("text")` — compatible with ansicolor package API, references `QuectoColors` statics directly
 
 ### Plain Fast Path
 
-`QuectoPlain` (defined in `quectocolors.dart`) provides zero-scan stylers for known-plain text. Accessed via `.plain` on each class:
-- `quectoColors.plain.red("text")` — instance
-- `QuectoColorsStatic.plain.red("text")` — static
+`QuectoPlain` provides zero-scan stylers for known-plain text via `static final` fields:
+- `QuectoPlain.red("text")`
 
 These skip ESC byte scanning entirely — pure `'$openCode$string$closeCode'` interpolation. ~3x faster than normal stylers on long strings.
 
 ### Entry Points
 
-- `lib/quectocolors.dart` — Main export: instance API + AnsiPen + ANSI support detection
-- `lib/quectocolors_static.dart` — Static-only API export + String extensions
+- `lib/quectocolors.dart` — Main export: QuectoColors, QuectoPlain, String extensions, AnsiPen, ANSI support detection
+- `lib/quectocolors_static.dart` — Re-exports `quectocolors.dart` (backward compatibility)
 - `lib/ansipen.dart` — AnsiPen compatibility layer (drop-in for ansicolor package)
 
 ### Core Mechanism
 
-`createStyler()` is the central function that builds ANSI styling closures. It:
+`createStyler()` is the central function that builds ANSI styling closures for the standard 16 colors. It:
 1. Pre-computes open/close code strings via string interpolation
 2. Pre-caches close code unit bytes for fast scanning
 3. Pre-warms the StringBuffer to avoid first-call reallocation
 4. Returns a closure that scans for ESC bytes using unrolled `codeUnitAt()` comparisons
 5. Handles **nested color reinjection** — re-applies the parent style after each nested close code using a do-while loop over a StringBuffer
 6. Branches on close code length (4 vs 5 chars) at closure creation time, not per-call
+
+### Extended Color Mechanism
+
+`createExtendedStyler()` is a fully independent method for 256-color and 16M true color (RGB). It:
+1. Takes a pre-built open code string and a close code int (39, 49, or 59)
+2. Uses the same WAY 4 unrolled `codeUnitAt()` scanning and StringBuffer nesting as `createStyler`
+3. Only handles the length-5 close code path (all extended close codes are 5 chars)
+4. Creates a new closure per call (not `static final`) — users should cache for hot loops
+5. **`createStyler` is completely untouched** — zero risk to existing performance
 
 ### Platform Detection
 
@@ -69,8 +80,9 @@ The `test/` directory contains benchmark infrastructure comparing QuectoColors a
 ## Key Types
 
 - `QuectoStyler = String Function(String)` — typedef for all styling functions
-- `QuectoPlain` — holds plain (zero-scan) stylers, accessed via `.plain`
-- `AnsiPen` — fluent style builder with method chaining (returns `this`)
+- `QuectoColors` — all-static class with `static final QuectoStyler` fields, `createStyler()`, `createExtendedStyler()`, and `rgbToAnsi256()`
+- `QuectoPlain` — all-static class with `static final QuectoStyler` fields, `createPlainStyler()`, and `createPlainExtendedStyler()`
+- `AnsiPen` — fluent style builder with method chaining (returns `this`), references `QuectoColors` statics, includes `ansi256Fg/Bg`, `rgbFg/Bg`, `underlineAnsi256/Rgb` methods
 
 ## Dependencies
 

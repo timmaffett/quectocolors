@@ -64,6 +64,24 @@ final class QuectoPlain {
   static final QuectoStyler bgMagentaBright = createPlainStyler(105, 49);
   static final QuectoStyler bgCyanBright = createPlainStyler(106, 49);
   static final QuectoStyler bgWhiteBright = createPlainStyler(107, 49);
+
+  /// Creates a plain styler for extended ANSI codes (256-color, 16M truecolor).
+  /// No ESC scanning, no nesting support. Maximum speed for known-plain text.
+  static QuectoStyler createPlainExtendedStyler(final String openCode, final int ansiClose) {
+    if (ansiColorDisabled) return (String input) => input;
+    final String closeCode = '\x1B[${ansiClose}m';
+    return (String string) => '$openCode$string$closeCode';
+  }
+
+  // --- 256-color xterm palette (plain fast path) ---
+  static QuectoStyler ansi256(int code) => createPlainExtendedStyler('\x1B[38;5;${code}m', 39);
+  static QuectoStyler bgAnsi256(int code) => createPlainExtendedStyler('\x1B[48;5;${code}m', 49);
+  static QuectoStyler underlineAnsi256(int code) => createPlainExtendedStyler('\x1B[58;5;${code}m', 59);
+
+  // --- 16M true color RGB (plain fast path) ---
+  static QuectoStyler rgb(int r, int g, int b) => createPlainExtendedStyler('\x1B[38;2;$r;$g;${b}m', 39);
+  static QuectoStyler bgRgb(int r, int g, int b) => createPlainExtendedStyler('\x1B[48;2;$r;$g;${b}m', 49);
+  static QuectoStyler underlineRgb(int r, int g, int b) => createPlainExtendedStyler('\x1B[58;2;$r;$g;${b}m', 59);
 }
 
 final class QuectoColors {
@@ -373,6 +391,92 @@ END WAY 3 */
   static final QuectoStyler bgMagentaBright = createStyler(105, 49);
   static final QuectoStyler bgCyanBright = createStyler(106, 49);
   static final QuectoStyler bgWhiteBright = createStyler(107, 49);
+
+  /// Creates a styler for extended ANSI codes (256-color, 16M truecolor).
+  /// Takes a pre-built openCode string and a simple close code int.
+  /// Contains its own scanning logic — fully independent of createStyler().
+  static QuectoStyler createExtendedStyler(final String openCode, final int ansiClose) {
+    if (ansiColorDisabled) {
+      return (String input) => input;
+    }
+
+    final String closeCode = '\x1B[${ansiClose}m';
+    // Extended close codes are always 5 chars (\x1B[39m, \x1B[49m, \x1B[59m)
+    const int closeLength = 5;
+
+    final sb = StringBuffer();
+    sb.write(openCode);  // pre-warm
+    sb.clear();
+
+    // Pre-cache close code bytes for unrolled scan
+    final int cc2 = closeCode.codeUnitAt(2);
+    final int cc3 = closeCode.codeUnitAt(3);
+    final int cc4 = closeCode.codeUnitAt(4);
+
+    return (String string) {
+      final int sLen = string.length;
+      final int endPos = sLen - 4; // sLen - closeLength + 1
+      int index = -1;
+      for (int i = 0; i < endPos; i++) {
+        if (string.codeUnitAt(i) == 0x1B &&
+            string.codeUnitAt(i + 1) == 0x5B &&
+            string.codeUnitAt(i + 2) == cc2 &&
+            string.codeUnitAt(i + 3) == cc3 &&
+            string.codeUnitAt(i + 4) == cc4) {
+          index = i;
+          break;
+        }
+      }
+
+      if (index == -1) {
+        return '$openCode$string$closeCode';
+      }
+
+      sb.clear();
+      sb.write(openCode);
+      int lastIndex = 0;
+      do {
+        sb.write(string.substring(lastIndex, index));
+        sb.write(openCode);
+        lastIndex = index + closeLength;
+        index = -1;
+        for (int i = lastIndex; i < endPos; i++) {
+          if (string.codeUnitAt(i) == 0x1B &&
+              string.codeUnitAt(i + 1) == 0x5B &&
+              string.codeUnitAt(i + 2) == cc2 &&
+              string.codeUnitAt(i + 3) == cc3 &&
+              string.codeUnitAt(i + 4) == cc4) {
+            index = i;
+            break;
+          }
+        }
+      } while (index != -1);
+
+      sb.write(string.substring(lastIndex));
+      sb.write(closeCode);
+      return sb.toString();
+    };
+  }
+
+  /// Converts RGB values to the nearest xterm 256-color palette index.
+  static int rgbToAnsi256(int red, int green, int blue) {
+    if (red == green && green == blue) {
+      if (red < 8) return 16;
+      if (red > 248) return 231;
+      return (((red - 8) / 247) * 24).round() + 232;
+    }
+    return 16 + (36 * (red / 255 * 5).round()) + (6 * (green / 255 * 5).round()) + (blue / 255 * 5).round();
+  }
+
+  // --- 256-color xterm palette ---
+  static QuectoStyler ansi256(int code) => createExtendedStyler('\x1B[38;5;${code}m', 39);
+  static QuectoStyler bgAnsi256(int code) => createExtendedStyler('\x1B[48;5;${code}m', 49);
+  static QuectoStyler underlineAnsi256(int code) => createExtendedStyler('\x1B[58;5;${code}m', 59);
+
+  // --- 16M true color (RGB) ---
+  static QuectoStyler rgb(int r, int g, int b) => createExtendedStyler('\x1B[38;2;$r;$g;${b}m', 39);
+  static QuectoStyler bgRgb(int r, int g, int b) => createExtendedStyler('\x1B[48;2;$r;$g;${b}m', 49);
+  static QuectoStyler underlineRgb(int r, int g, int b) => createExtendedStyler('\x1B[58;2;$r;$g;${b}m', 59);
 }
 
 
@@ -419,4 +523,14 @@ extension QuectoColorsOnStrings on String {
   String get bgMagentaBright => QuectoColors.bgMagentaBright(this);
   String get bgCyanBright => QuectoColors.bgCyanBright(this);
   String get bgWhiteBright => QuectoColors.bgWhiteBright(this);
+
+  // --- 256-color xterm palette ---
+  String ansi256(int code) => QuectoColors.ansi256(code)(this);
+  String bgAnsi256(int code) => QuectoColors.bgAnsi256(code)(this);
+  String underlineAnsi256(int code) => QuectoColors.underlineAnsi256(code)(this);
+
+  // --- 16M true color (RGB) ---
+  String rgb(int r, int g, int b) => QuectoColors.rgb(r, g, b)(this);
+  String bgRgb(int r, int g, int b) => QuectoColors.bgRgb(r, g, b)(this);
+  String underlineRgb(int r, int g, int b) => QuectoColors.underlineRgb(r, g, b)(this);
 }

@@ -241,4 +241,14 @@ class AnsiPen {
     styleStack.add(QuectoColors.bgWhiteBright);
     return this;
   }
+
+  // --- 256-color xterm palette ---
+  AnsiPen ansi256Fg(int code) { styleStack.add(QuectoColors.ansi256(code)); return this; }
+  AnsiPen ansi256Bg(int code) { styleStack.add(QuectoColors.bgAnsi256(code)); return this; }
+  AnsiPen underlineAnsi256(int code) { styleStack.add(QuectoColors.underlineAnsi256(code)); return this; }
+
+  // --- 16M true color (RGB) ---
+  AnsiPen rgbFg(int r, int g, int b) { styleStack.add(QuectoColors.rgb(r, g, b)); return this; }
+  AnsiPen rgbBg(int r, int g, int b) { styleStack.add(QuectoColors.bgRgb(r, g, b)); return this; }
+  AnsiPen underlineRgb(int r, int g, int b) { styleStack.add(QuectoColors.underlineRgb(r, g, b)); return this; }
 }
