@@ -39,10 +39,10 @@ String centerStrOnTerminal(String title, int width) {
 
 
 void main() async {
-  if (!stdout.hasTerminal) {
-    print('Stdout not attached to a terminal! Exiting...');
-    exit(0);
-  }
+  //if (!stdout.hasTerminal) {
+  //  print('Stdout not attached to a terminal! Exiting...');
+  //  exit(0);
+  //}
 
   //print('${stdout.terminalLines} x ${stdout.terminalColumns}');
 
@@ -51,7 +51,7 @@ void main() async {
   //LINUX ONLY//});
 
 
-  int terminalWidth = stdout.terminalColumns - 1;
+  int terminalWidth = stdout.hasTerminal ? stdout.terminalColumns - 1 : 120;
 
   //print('Determined terminal to be $width columns and $height rows ');
   
@@ -73,7 +73,7 @@ void main() async {
   runTestSet( testVersion:TestVersion.simple, terminalWidth:terminalWidth);
   runTestSet( testVersion:TestVersion.simple_3styles, terminalWidth:terminalWidth );
   runTestSet( testVersion:TestVersion.complex, terminalWidth:terminalWidth );
-  //runTestSet(  testMode:TestLevels.largerandom_complex, terminalWidth:terminalWidth );  // this just shows time factor of .indexOf() on huge buffers, but really isn't representative sample of real world use
+  runTestSet( testVersion:TestVersion.largerandom_complex, terminalWidth:terminalWidth );
   
 }
 
@@ -148,10 +148,12 @@ class SetOfPerformanceTests {
       throw('Error: referenceIndexFor100Percent=$referenceIndexFor100Percent is out of range 0-$totalAlgorithmCount');
     }
 
-    // And now create the percent list based on the reference algorithm 
-    double reference100Percent = elapsedMillisecondsList[referenceIndexFor100Percent].toDouble();
+    // And now create the percent list based on the reference algorithm
+    // Use microseconds to avoid division by zero when tests complete in <1ms
+    double reference100Percent = elapsedMicrosecondsList[referenceIndexFor100Percent].toDouble();
+    if(reference100Percent == 0.0) reference100Percent = 1.0; // safety: avoid div by zero
     for(int i=0;i<totalAlgorithmCount;i++) {
-      percentList.add((elapsedMillisecondsList[i].toDouble()/reference100Percent) * 100.0);
+      percentList.add((elapsedMicrosecondsList[i].toDouble()/reference100Percent) * 100.0);
     }
 
     // get max width of any name
@@ -204,7 +206,7 @@ class SetOfPerformanceTests {
 }
 
 
-late final randomBigString; // Generate a large random string
+late final String randomBigString; // Generate a large random string
 bool randomStringMade = false;
 
 const int defaultIterations = 100000;
@@ -246,6 +248,11 @@ void runTestSet( {required TestVersion testVersion, required int terminalWidth})
                                           colorForAlgorithm: QuectoColorsStatic.red, testFunction: testAnsiPenCompatibleQuectoColors );
   perfSet.runPerformanceTestOnTestFunction(algorithmName: 'ChalkDart Package', algorithmDescription: 'Using ChalkDart package',
                                           colorForAlgorithm: QuectoColorsStatic.blueBright, testFunction: testChalkDart );
+
+  perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuClrs Plain (instance)', algorithmDescription: 'QuectoColors plain fast path - zero ESC scanning, caller guarantees no nesting',
+                                          colorForAlgorithm: QuectoColorsStatic.whiteBright, testFunction: testQuectoColorsPlain );
+  perfSet.runPerformanceTestOnTestFunction(algorithmName: 'QuClrs Plain (static)', algorithmDescription: 'QuectoColorsStatic plain fast path - zero ESC scanning, caller guarantees no nesting',
+                                          colorForAlgorithm: QuectoColorsStatic.white, testFunction: testQuectoColorsStaticPlain );
 
   perfSet.summarizeResults(referenceIndexFor100Percent:referenceAlgIndex);
  
@@ -515,4 +522,73 @@ Stopwatch testQuectoColorsAlt(int iterations, TestVersion testMode ) {
   }
   stopwatch6.stop();
   return stopwatch6;
+}
+
+// Plain fast path tests — zero ESC scanning, pure string interpolation.
+// For simple/simple_3styles: caller guarantees input is plain text.
+// For complex: uses plain for ALL calls to show raw speed ceiling
+// (output nesting will be incorrect, but demonstrates the performance floor).
+
+Stopwatch testQuectoColorsPlain(int iterations, TestVersion testMode ) {
+  final stopwatch7 = Stopwatch()..start();
+  QuectoStyler simpleStyle = quectoColors.plain.red;
+
+  for (var i = 0; i < iterations; i++) {
+    late final String outStr;
+    switch(testMode) {
+      case TestVersion.largerandom_complex:
+        String testThisStr = 'This is our string to test $i'+randomBigString;
+        String innerString2 = "inner $i str"+randomBigString;
+        outStr = quectoColors.plain.red( 'Hello '+ quectoColors.plain.blue(randomBigString) + quectoColors.plain.green(' Here is inner ${quectoColors.plain.yellow(innerString2)} and end of green') + testThisStr);
+      case TestVersion.complex:
+        String testThisStr = 'This is our string to test $i';
+        String innerString2 = "inner $i str";
+        outStr = quectoColors.plain.red( 'Hello '+ quectoColors.plain.blue(testThisStr) + quectoColors.plain.green(' Here is inner ${quectoColors.plain.yellow(innerString2)} and end of green') + ' and end of red');
+      case TestVersion.simple:
+        outStr = simpleStyle('Hello ');
+      case TestVersion.simple_3styles:
+        outStr = quectoColors.plain.strikethrough( quectoColors.plain.italic( quectoColors.plain.red( 'Hello ')));
+    }
+    if(printSomeResults == ResultsToPrint.none) {
+      // do nothing
+    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
+      print(outStr);
+    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
+      print(outStr);
+    }
+  }
+  stopwatch7.stop();
+  return stopwatch7;
+}
+
+Stopwatch testQuectoColorsStaticPlain(int iterations, TestVersion testMode ) {
+  final stopwatch8 = Stopwatch()..start();
+  QuectoStyler simpleStyle = QuectoColorsStatic.plain.red;
+
+  for (var i = 0; i < iterations; i++) {
+    late final String outStr;
+    switch(testMode) {
+      case TestVersion.largerandom_complex:
+        String testThisStr = 'This is our string to test $i'+randomBigString;
+        String innerString2 = "inner $i str"+randomBigString;
+        outStr = QuectoColorsStatic.plain.red( 'Hello '+ QuectoColorsStatic.plain.blue(randomBigString) + QuectoColorsStatic.plain.green(' Here is inner ${QuectoColorsStatic.plain.yellow(innerString2)} and end of green') + testThisStr);
+      case TestVersion.complex:
+        String testThisStr = 'This is our string to test $i';
+        String innerString2 = "inner $i str";
+        outStr = QuectoColorsStatic.plain.red( 'Hello '+ QuectoColorsStatic.plain.blue(testThisStr) + QuectoColorsStatic.plain.green(' Here is inner ${QuectoColorsStatic.plain.yellow(innerString2)} and end of green') + ' and end of red');
+      case TestVersion.simple:
+        outStr = simpleStyle('Hello ');
+      case TestVersion.simple_3styles:
+        outStr = QuectoColorsStatic.plain.strikethrough( QuectoColorsStatic.plain.italic( QuectoColorsStatic.plain.red( 'Hello ')));
+    }
+    if(printSomeResults == ResultsToPrint.none) {
+      // do nothing
+    } else if(printSomeResults == ResultsToPrint.oneAtStart && i==0) {
+      print(outStr);
+    } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd && (i<printSomeNumberOfLinesAtStartAndEnd || i>=(iterations-printSomeNumberOfLinesAtStartAndEnd))) {
+      print(outStr);
+    }
+  }
+  stopwatch8.stop();
+  return stopwatch8;
 }

@@ -1,17 +1,20 @@
 name: quectocolors
 description: "A new Flutter package project."
 version: 0.0.1
-homepage:
+homepage:  https://github.com/timmaffett/quectocolors
+publish_to: none # Remove this line if you wish to publish to pub.dev
 
 environment:
-  sdk: ^3.8.0-149.0.dev
+  sdk: ^3.8.0
   flutter: ">=1.17.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  ansicolor: ^2.0.3
-  chalkdart: ^3.0.4
+  ansicolor: #^2.0.3
+    path: faster_pkgs/ansicolor-dart
+
+  chalkdart: ^3.0.6
 
 dev_dependencies:
   flutter_test:
@@ -22,7 +25,7 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-flutter:
+#flutter:
 
   # To add assets to your package, add an assets section, like this:
   # assets:
