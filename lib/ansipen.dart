@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'supports_ansi_color.dart';
 export "supports_ansi_color.dart";
 export 'src/quectocolors_ansipen.dart';
