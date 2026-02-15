@@ -15,7 +15,11 @@
       "Bash(ls -la \"C:\\\\src\\\\quectocolors\\\\faster_pkgs\\\\ansicolor-dart\\\\lib\"\" 2>&1 || echo \"Directory not found or error occurred \")",
       "Bash(ls:*)",
       "Bash(flutter test:*)",
-      "Bash(dart:*)"
+      "Bash(dart:*)",
+      "Bash(./test/refactor_bench.exe:*)",
+      "Bash(git stash:*)",
+      "Bash(./test/refactor_bench_BEFORE.exe:*)",
+      "Bash(./test/refactor_bench_AFTER.exe:*)"
     ]
   }
 }

@@ -84,179 +84,52 @@ final class QuectoPlain {
   static QuectoStyler underlineRgb(int r, int g, int b) => createPlainExtendedStyler('\x1B[58;2;$r;$g;${b}m', 59);
 }
 
-final class QuectoColors {
+/// Shared core: creates a styler closure from pre-built open/close code strings.
+/// Handles both length-4 (\x1B[0m for reset) and length-5 (\x1B[XXm) close codes.
+/// Used by both createStyler() and createExtendedStyler().
+QuectoStyler _createStylerFromCodes(final String openCode, final String closeCode) {
+  final closeLength = closeCode.length;
+  final sb = StringBuffer();
+  sb.write(openCode); // pre-warm StringBuffer capacity
+  sb.clear();
 
-  static String debugOut( String instr ) {
-    return instr.replaceAll('\x1B[', 'ESC[');
-  }
+  final int cc2 = closeCode.codeUnitAt(2);
+  final int cc3 = closeCode.codeUnitAt(3);
 
-  static QuectoStyler createStyler( final int ansiOpen, final int ansiClose ) {
-  //static String Function(String) createStyler( final int ansiOpen, final int ansiClose ) {
-    if(ansiColorDisabled) {
-      return (String input) => input;
-    }
-
-
-// --- OPEN/CLOSE CODE CONSTRUCTION HISTORY ---
-
-//WAY 1 - string interpolation (FASTEST for building open/close codes)
-//    final String openCode = '\x1B[${ansiOpen}m';
-//    final String closeCode = '\x1B[${ansiClose}m';
-
-// WAY2 - StringBuffer with separate writes - slower than WAY 1
-//    final sb = StringBuffer();
-//
-//
-//    sb.write('\x1B[');
-//    sb.write(ansiOpen);
-//    sb.write('m');
-//
-//    final String openCode = sb.toString();
-//    sb.clear();
-//
-//    sb.write('\x1B[');
-//    sb.write(ansiClose);
-//    sb.write('m');
-//
-//    final String closeCode = sb.toString();
-
-/* WAY 3 - sometimes appeared to test faster but REALLY??
-    final sb = StringBuffer();
-
-
-    sb.write('\x1B[${ansiOpen}m');
-
-    final String openCode = sb.toString();
-    sb.clear();
-
-    sb.write('\x1B[${ansiClose}m');
-
-    final String closeCode = sb.toString();
-WAY 3*/
-
-    final String openCode = '\x1B[${ansiOpen}m';
-    final String closeCode = '\x1B[${ansiClose}m';
-    final closeLength = closeCode.length;
-    final sb = StringBuffer(); // create our string buffer here - so scoped for each styler but not having to be created each styling
-    sb.write(openCode); // pre-warm the StringBuffer so it has some internal
-    sb.clear();         // capacity before the closure captures it — avoids
-                        // a reallocation on the first nesting-path call.
-                        // (discovered via QuectoColorsAlt which did this
-                        // incidentally and benchmarked ~5-8% faster on
-                        // nesting cases)
-
-
-// --- CLOSE CODE SEARCH & NESTING HISTORY ---
-// The main performance bottleneck is finding the closeCode in the input string.
-// We take String directly instead of Object to avoid .toString() overhead.
-
-/* WAY 3 - string.indexOf(closeCode) — the original approach.
-    // Simple but slow: indexOf does general pattern matching on every call,
-    // even though the close code always starts with the rare 0x1B (ESC) byte.
-    // ~2.5x slower than WAY 4 on simple (no-nesting) case,
-    // ~2.4x slower on complex nested case with 200-char strings.
+  if (closeLength == 5) {
+    final int cc4 = closeCode.codeUnitAt(4);
 
     return (String string) {
-      //final String string = input.toString();  // we just take string instead, the conversion overhead is not worth it
-      int index = string.indexOf(closeCode);
+      final int sLen = string.length;
+      final int endPos = sLen - 4; // sLen - closeLength + 1
+      int index = -1;
+      for (int i = 0; i < endPos; i++) {
+        if (string.codeUnitAt(i) == 0x1B &&
+            string.codeUnitAt(i + 1) == 0x5B &&
+            string.codeUnitAt(i + 2) == cc2 &&
+            string.codeUnitAt(i + 3) == cc3 &&
+            string.codeUnitAt(i + 4) == cc4) {
+          index = i;
+          break;
+        }
+      }
 
       if (index == -1) {
-        // ADDING STRINGS VERSION
-        //    return openCode + string + closeCode; // 25% slower then string interpolation
-        // STRING BUFFER VERSION,
-        //    sb.clear();
-        //    sb.write(openCode);
-        //    sb.write(string);
-        //    sb.write(closeCode);
-        //    return sb.toString(); //30+% slower than string interpolation
         return '$openCode$string$closeCode';
       }
 
-      // Handle nested colors.
-
-      // We could do this:
-      // return openCode + string.replaceAll(closeCode, openCode) + closeCode;
-      // but this version is 20 to 30 % faster:
-      / * NESTING WAY 1 - string concatenation with += * /
-      var result = openCode;
-      var lastIndex = 0;
-
-      while (index != -1) {
-        result += string.substring(lastIndex, index) + openCode;
-        lastIndex = index + closeCode.length;
-        index = string.indexOf(closeCode, lastIndex);
-      }
-
-      result += string.substring(lastIndex) + closeCode;
-
-      return result;
-      / * END NESTING WAY 1 * /
-
-/ * NESTING WAY 2 STRING BUFFERS - FASTER than NESTING WAY 1 above * /
-      //Use other scoped sb//final sb = StringBuffer();
-
-      // CREATE HERE WITH INITIAL VALUE
-      //final sb = StringBuffer(openCode);
-
-      //USE OUTER - fastest
-      sb.clear();  // we are using persistently scoped sb, so clear and start fresh
+      sb.clear();
       sb.write(openCode);
 
       int lastIndex = 0;
-
-      // avoid one comparison by doing index!=-1 check at END of loop since the first time we come in
-      // we know it is NOT -1 or we would have exited above..
-      //while (index != -1) {
-      //  sb.write( string.substring(lastIndex, index) );
-      //  sb.write(openCode );
-      //  lastIndex = index + closeLength;
-      //  index = string.indexOf(closeCode, lastIndex);
-      //}
-
       do {
-        sb.write( string.substring(lastIndex, index) );
-        sb.write(openCode );
+        sb.write(string.substring(lastIndex, index));
+        sb.write(openCode);
         lastIndex = index + closeLength;
-        index = string.indexOf(closeCode, lastIndex);
-      } while (index != -1);
-
-
-      sb.write( string.substring(lastIndex) );
-      sb.write( closeCode );
-
-      return sb.toString();
-/ * END NESTING WAY 2 * /
-    };
-END WAY 3 */
-
-
-// WAY 4 - codeUnitAt unrolled scan — CURRENT FASTEST
-// Pre-cache close code unit values for fast single-pass scanning.
-// All ANSI close codes are \x1B[Xm (4 chars) or \x1B[XXm (5 chars).
-// Instead of string.indexOf(closeCode) which does a general pattern
-// search, we scan for the rare 0x1B byte and immediately verify the
-// remaining bytes with unrolled comparisons.
-// ~2.5-3x faster than WAY 3 indexOf on simple case (74ns vs 81ns per call),
-// ~1.4x faster on 3-style nesting (285ns vs 411ns),
-// ~2.4x faster on complex nested with 200-char strings (3064ns vs 7304ns).
-// Also uses NESTING WAY 2 (StringBuffer with do-while) for the nesting path.
-
-    final int cc2 = closeCode.codeUnitAt(2);
-    final int cc3 = closeCode.codeUnitAt(3);
-
-    if (closeLength == 5) {
-      // Length-5 path: covers all styles except reset (bold, italic,
-      // underline, colors, bg colors, etc.)
-      final int cc4 = closeCode.codeUnitAt(4);
-
-      return (String string) {
-        // Single-pass scan: check for 0x1B, then verify \x1B[XXm inline.
-        final int sLen = string.length;
-        final int endPos = sLen - 4; // sLen - closeLength + 1
-        int index = -1;
-        for (int i = 0; i < endPos; i++) {
+        index = -1;
+        for (int i = lastIndex; i < endPos; i++) {
           if (string.codeUnitAt(i) == 0x1B &&
-              string.codeUnitAt(i + 1) == 0x5B && // '['
+              string.codeUnitAt(i + 1) == 0x5B &&
               string.codeUnitAt(i + 2) == cc2 &&
               string.codeUnitAt(i + 3) == cc3 &&
               string.codeUnitAt(i + 4) == cc4) {
@@ -264,46 +137,43 @@ END WAY 3 */
             break;
           }
         }
+      } while (index != -1);
 
-        if (index == -1) {
-          return '$openCode$string$closeCode';
+      sb.write(string.substring(lastIndex));
+      sb.write(closeCode);
+
+      return sb.toString();
+    };
+  } else {
+    // Length-4 path: only reset (\x1B[0m)
+    return (String string) {
+      final int sLen = string.length;
+      final int endPos = sLen - 3; // sLen - closeLength + 1
+      int index = -1;
+      for (int i = 0; i < endPos; i++) {
+        if (string.codeUnitAt(i) == 0x1B &&
+            string.codeUnitAt(i + 1) == 0x5B &&
+            string.codeUnitAt(i + 2) == cc2 &&
+            string.codeUnitAt(i + 3) == cc3) {
+          index = i;
+          break;
         }
+      }
 
-        // Handle nested colors using StringBuffer (NESTING WAY 2).
-        sb.clear();
+      if (index == -1) {
+        return '$openCode$string$closeCode';
+      }
+
+      sb.clear();
+      sb.write(openCode);
+
+      int lastIndex = 0;
+      do {
+        sb.write(string.substring(lastIndex, index));
         sb.write(openCode);
-
-        int lastIndex = 0;
-        do {
-          sb.write( string.substring(lastIndex, index) );
-          sb.write( openCode );
-          lastIndex = index + closeLength;
-          // Continue scanning from lastIndex
-          index = -1;
-          for (int i = lastIndex; i < endPos; i++) {
-            if (string.codeUnitAt(i) == 0x1B &&
-                string.codeUnitAt(i + 1) == 0x5B &&
-                string.codeUnitAt(i + 2) == cc2 &&
-                string.codeUnitAt(i + 3) == cc3 &&
-                string.codeUnitAt(i + 4) == cc4) {
-              index = i;
-              break;
-            }
-          }
-        } while (index != -1);
-
-        sb.write( string.substring(lastIndex) );
-        sb.write( closeCode );
-
-        return sb.toString();
-      };
-    } else {
-      // Length-4 path: only reset (\x1B[0m)
-      return (String string) {
-        final int sLen = string.length;
-        final int endPos = sLen - 3; // sLen - closeLength + 1
-        int index = -1;
-        for (int i = 0; i < endPos; i++) {
+        lastIndex = index + closeLength;
+        index = -1;
+        for (int i = lastIndex; i < endPos; i++) {
           if (string.codeUnitAt(i) == 0x1B &&
               string.codeUnitAt(i + 1) == 0x5B &&
               string.codeUnitAt(i + 2) == cc2 &&
@@ -312,38 +182,27 @@ END WAY 3 */
             break;
           }
         }
+      } while (index != -1);
 
-        if (index == -1) {
-          return '$openCode$string$closeCode';
-        }
+      sb.write(string.substring(lastIndex));
+      sb.write(closeCode);
 
-        sb.clear();
-        sb.write(openCode);
+      return sb.toString();
+    };
+  }
+}
 
-        int lastIndex = 0;
-        do {
-          sb.write( string.substring(lastIndex, index) );
-          sb.write( openCode );
-          lastIndex = index + closeLength;
-          index = -1;
-          for (int i = lastIndex; i < endPos; i++) {
-            if (string.codeUnitAt(i) == 0x1B &&
-                string.codeUnitAt(i + 1) == 0x5B &&
-                string.codeUnitAt(i + 2) == cc2 &&
-                string.codeUnitAt(i + 3) == cc3) {
-              index = i;
-              break;
-            }
-          }
-        } while (index != -1);
+final class QuectoColors {
 
-        sb.write( string.substring(lastIndex) );
-        sb.write( closeCode );
+  static String debugOut( String instr ) {
+    return instr.replaceAll('\x1B[', 'ESC[');
+  }
 
-        return sb.toString();
-      };
+  static QuectoStyler createStyler( final int ansiOpen, final int ansiClose ) {
+    if(ansiColorDisabled) {
+      return (String input) => input;
     }
-/* END WAY 4 */
+    return _createStylerFromCodes('\x1B[${ansiOpen}m', '\x1B[${ansiClose}m');
   }
 
   static final QuectoStyler reset = createStyler(0, 0);
@@ -393,69 +252,13 @@ END WAY 3 */
   static final QuectoStyler bgWhiteBright = createStyler(107, 49);
 
   /// Creates a styler for extended ANSI codes (256-color, 16M truecolor).
-  /// Takes a pre-built openCode string and a simple close code int.
-  /// Contains its own scanning logic — fully independent of createStyler().
+  /// Takes a pre-built openCode string and a close code int.
+  /// Delegates to the shared _createStylerFromCodes() core.
   static QuectoStyler createExtendedStyler(final String openCode, final int ansiClose) {
     if (ansiColorDisabled) {
       return (String input) => input;
     }
-
-    final String closeCode = '\x1B[${ansiClose}m';
-    // Extended close codes are always 5 chars (\x1B[39m, \x1B[49m, \x1B[59m)
-    const int closeLength = 5;
-
-    final sb = StringBuffer();
-    sb.write(openCode);  // pre-warm
-    sb.clear();
-
-    // Pre-cache close code bytes for unrolled scan
-    final int cc2 = closeCode.codeUnitAt(2);
-    final int cc3 = closeCode.codeUnitAt(3);
-    final int cc4 = closeCode.codeUnitAt(4);
-
-    return (String string) {
-      final int sLen = string.length;
-      final int endPos = sLen - 4; // sLen - closeLength + 1
-      int index = -1;
-      for (int i = 0; i < endPos; i++) {
-        if (string.codeUnitAt(i) == 0x1B &&
-            string.codeUnitAt(i + 1) == 0x5B &&
-            string.codeUnitAt(i + 2) == cc2 &&
-            string.codeUnitAt(i + 3) == cc3 &&
-            string.codeUnitAt(i + 4) == cc4) {
-          index = i;
-          break;
-        }
-      }
-
-      if (index == -1) {
-        return '$openCode$string$closeCode';
-      }
-
-      sb.clear();
-      sb.write(openCode);
-      int lastIndex = 0;
-      do {
-        sb.write(string.substring(lastIndex, index));
-        sb.write(openCode);
-        lastIndex = index + closeLength;
-        index = -1;
-        for (int i = lastIndex; i < endPos; i++) {
-          if (string.codeUnitAt(i) == 0x1B &&
-              string.codeUnitAt(i + 1) == 0x5B &&
-              string.codeUnitAt(i + 2) == cc2 &&
-              string.codeUnitAt(i + 3) == cc3 &&
-              string.codeUnitAt(i + 4) == cc4) {
-            index = i;
-            break;
-          }
-        }
-      } while (index != -1);
-
-      sb.write(string.substring(lastIndex));
-      sb.write(closeCode);
-      return sb.toString();
-    };
+    return _createStylerFromCodes(openCode, '\x1B[${ansiClose}m');
   }
 
   /// Converts RGB values to the nearest xterm 256-color palette index.
