@@ -8,6 +8,8 @@
 [![GitHub stars](https://img.shields.io/github/stars/timmaffett/quectocolors?)](https://github.com/timmaffett/quectocolors)
 
 A high-performance ANSI terminal color styling library for Dart and Flutter with **correct nested color support**.
+Quecto refers to the smallest official SI (International System of Units) prefix, representing a factor of $10^{-30}$.
+QuectoColors is intended to be the fastest, style nesting correct ANSI library available for dart.
 
 QuectoColors provides multiple API styles for applying colors, text styles, and background colors to terminal output. Unlike other Dart ANSI color packages, QuectoColors properly handles nested colors — when you write `('Hello ${"world".blue} outside!').red`, the red color is correctly restored after the blue text ends.
 
