@@ -11,10 +11,10 @@ import 'dart:typed_data';
 
 const int kEsc = 0x1B;
 const int kBracket = 0x5B; // '['
-const int kLowerM = 0x6D;  // 'm'
+const int kLowerM = 0x6D; // 'm'
 
 // Two representative close codes (different lengths)
-const String closeCode4 = '\x1B[0m';  // length 4 - full reset
+const String closeCode4 = '\x1B[0m'; // length 4 - full reset
 const String closeCode5 = '\x1B[39m'; // length 5 - foreground reset
 
 const int iterations = 10000000;
@@ -29,7 +29,8 @@ final String medPlain =
     'Hello World this is a medium length test string for perf';
 
 final String longPlain = String.fromCharCodes(
-    List.generate(200, (i) => 97 + Random(42).nextInt(26)));
+  List.generate(200, (i) => 97 + Random(42).nextInt(26)),
+);
 
 // Simulates output of blue("Hello ") — has ESC codes, including \x1B[39m
 final String shortWithEsc = '\x1B[34mHello \x1B[39m';
@@ -194,7 +195,6 @@ int twoByteSentinel(String s, Uint16List closeCU, int closeLen) {
   return -1;
 }
 
-
 // ──────────────────────────────────────────────────────────────
 // Harness
 // ──────────────────────────────────────────────────────────────
@@ -213,13 +213,19 @@ void bench(String label, BenchFn fn, int expectedResult) {
   sw.stop();
 
   final ns = (sw.elapsedMicroseconds * 1000) ~/ iterations;
-  final ok = result == expectedResult ? '' : ' *** WRONG (got $result, expected $expectedResult)';
-  print('  ${label.padRight(42)} ${sw.elapsedMilliseconds.toString().padLeft(6)}ms  ${ns.toString().padLeft(5)}ns/call$ok');
+  final ok = result == expectedResult
+      ? ''
+      : ' *** WRONG (got $result, expected $expectedResult)';
+  print(
+    '  ${label.padRight(42)} ${sw.elapsedMilliseconds.toString().padLeft(6)}ms  ${ns.toString().padLeft(5)}ns/call$ok',
+  );
 }
 
 void runSuite(String testName, String testString, String closeCode) {
   print('\n${"=" * 70}');
-  print('$testName  (${testString.length} chars, closeCode="${closeCode.replaceAll('\x1B', 'ESC')}")');
+  print(
+    '$testName  (${testString.length} chars, closeCode="${closeCode.replaceAll('\x1B', 'ESC')}")',
+  );
   print('${"=" * 70}');
 
   final expected = testString.indexOf(closeCode);
@@ -235,20 +241,56 @@ void runSuite(String testName, String testString, String closeCode) {
   final cu3 = closeCode.codeUnitAt(3);
   final int? cu4 = closeLen > 4 ? closeCode.codeUnitAt(4) : null;
 
-  bench('0. Original indexOf(closeCode)', () => original(testString, closeCode), expected);
-  bench('1. contains(ESC) pre-check', () => containsPrecheck(testString, closeCode), expected);
-  bench('2. indexOf(ESC) + indexOf from pos', () => indexOfEscPrecheck(testString, closeCode), expected);
-  bench('3. codeUnitAt ESC + indexOf from pos', () => codeUnitAtThenIndexOf(testString, closeCode), expected);
-  bench('4. Custom full match (Uint16List)', () => customFullMatch(testString, closeCU, closeLen), expected);
+  bench(
+    '0. Original indexOf(closeCode)',
+    () => original(testString, closeCode),
+    expected,
+  );
+  bench(
+    '1. contains(ESC) pre-check',
+    () => containsPrecheck(testString, closeCode),
+    expected,
+  );
+  bench(
+    '2. indexOf(ESC) + indexOf from pos',
+    () => indexOfEscPrecheck(testString, closeCode),
+    expected,
+  );
+  bench(
+    '3. codeUnitAt ESC + indexOf from pos',
+    () => codeUnitAtThenIndexOf(testString, closeCode),
+    expected,
+  );
+  bench(
+    '4. Custom full match (Uint16List)',
+    () => customFullMatch(testString, closeCU, closeLen),
+    expected,
+  );
 
   if (closeLen == 4) {
-    bench('5. Custom unrolled (len=4)', () => customUnrolled4(testString, cu1, cu2, cu3), expected);
+    bench(
+      '5. Custom unrolled (len=4)',
+      () => customUnrolled4(testString, cu1, cu2, cu3),
+      expected,
+    );
   } else if (closeLen == 5) {
-    bench('6. Custom unrolled (len=5)', () => customUnrolled5(testString, cu1, cu2, cu3, cu4!), expected);
+    bench(
+      '6. Custom unrolled (len=5)',
+      () => customUnrolled5(testString, cu1, cu2, cu3, cu4!),
+      expected,
+    );
   }
 
-  bench('7. Hybrid ESC scan + manual verify', () => hybridScan(testString, closeCU, closeLen), expected);
-  bench('9. Two-byte sentinel (ESC+[)', () => twoByteSentinel(testString, closeCU, closeLen), expected);
+  bench(
+    '7. Hybrid ESC scan + manual verify',
+    () => hybridScan(testString, closeCU, closeLen),
+    expected,
+  );
+  bench(
+    '9. Two-byte sentinel (ESC+[)',
+    () => twoByteSentinel(testString, closeCU, closeLen),
+    expected,
+  );
 }
 
 void main() {
@@ -256,17 +298,17 @@ void main() {
   print('Testing approaches to replace string.indexOf(closeCode)\n');
 
   // Test with the 5-char close code (foreground reset) — most common
-  runSuite('SHORT PLAIN (no ESC)',       shortPlain,      closeCode5);
-  runSuite('MEDIUM PLAIN (no ESC)',      medPlain,        closeCode5);
-  runSuite('LONG PLAIN (no ESC)',        longPlain,       closeCode5);
-  runSuite('SHORT WITH ESC (match)',     shortWithEsc,    closeCode5);
-  runSuite('LONG, ESC IN MIDDLE',        longWithEscMid,  closeCode5);
-  runSuite('LONG, ESC NEAR END',         longWithEscEnd,  closeCode5);
+  runSuite('SHORT PLAIN (no ESC)', shortPlain, closeCode5);
+  runSuite('MEDIUM PLAIN (no ESC)', medPlain, closeCode5);
+  runSuite('LONG PLAIN (no ESC)', longPlain, closeCode5);
+  runSuite('SHORT WITH ESC (match)', shortWithEsc, closeCode5);
+  runSuite('LONG, ESC IN MIDDLE', longWithEscMid, closeCode5);
+  runSuite('LONG, ESC NEAR END', longWithEscEnd, closeCode5);
 
   // Also test with the 4-char close code (full reset)
   print('\n\n${"#" * 70}');
   print('# Now testing with 4-char closeCode (\\x1B[0m)');
   print('${"#" * 70}');
-  runSuite('SHORT PLAIN (len=4 close)',  shortPlain,      closeCode4);
-  runSuite('LONG PLAIN (len=4 close)',   longPlain,       closeCode4);
+  runSuite('SHORT PLAIN (len=4 close)', shortPlain, closeCode4);
+  runSuite('LONG PLAIN (len=4 close)', longPlain, closeCode4);
 }

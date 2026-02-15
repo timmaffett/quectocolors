@@ -13,10 +13,12 @@ void main() {
 
   // Test strings
   const shortPlain = 'Hello';
-  const longPlain = 'The quick brown fox jumps over the lazy dog and then runs around the yard several times before finally settling down for a nice long nap in the warm afternoon sunshine';
+  const longPlain =
+      'The quick brown fox jumps over the lazy dog and then runs around the yard several times before finally settling down for a nice long nap in the warm afternoon sunshine';
   final shortNested = QuectoColors.blue('inner');
   final nestedString = 'before $shortNested after';
-  final multiNested = '${QuectoColors.blue("a")}${QuectoColors.green("b")}${QuectoColors.cyan("c")}';
+  final multiNested =
+      '${QuectoColors.blue("a")}${QuectoColors.green("b")}${QuectoColors.cyan("c")}';
 
   // Cache extended stylers (as users should)
   final ansi256Red = QuectoColors.ansi256(196);
@@ -48,7 +50,9 @@ void main() {
   }
   sw.stop();
   final basicRedShortNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('1. basic red(short plain)    : ${basicRedShortNs.toStringAsFixed(1)} ns/call');
+  print(
+    '1. basic red(short plain)    : ${basicRedShortNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 2: Extended ansi256, short plain string (no nesting) ---
   sw = Stopwatch()..start();
@@ -57,7 +61,9 @@ void main() {
   }
   sw.stop();
   final ext256ShortNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('2. ansi256(short plain)      : ${ext256ShortNs.toStringAsFixed(1)} ns/call');
+  print(
+    '2. ansi256(short plain)      : ${ext256ShortNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 3: Extended rgb, short plain string (no nesting) ---
   sw = Stopwatch()..start();
@@ -66,7 +72,9 @@ void main() {
   }
   sw.stop();
   final extRgbShortNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('3. rgb(short plain)          : ${extRgbShortNs.toStringAsFixed(1)} ns/call');
+  print(
+    '3. rgb(short plain)          : ${extRgbShortNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 4: Basic red, long plain string (no nesting) ---
   sw = Stopwatch()..start();
@@ -75,7 +83,9 @@ void main() {
   }
   sw.stop();
   final basicRedLongNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('4. basic red(long plain)     : ${basicRedLongNs.toStringAsFixed(1)} ns/call');
+  print(
+    '4. basic red(long plain)     : ${basicRedLongNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 5: Extended ansi256, long plain string (no nesting) ---
   sw = Stopwatch()..start();
@@ -84,7 +94,9 @@ void main() {
   }
   sw.stop();
   final ext256LongNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('5. ansi256(long plain)       : ${ext256LongNs.toStringAsFixed(1)} ns/call');
+  print(
+    '5. ansi256(long plain)       : ${ext256LongNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 6: Basic red, nested string (nesting path) ---
   sw = Stopwatch()..start();
@@ -93,7 +105,9 @@ void main() {
   }
   sw.stop();
   final basicRedNestedNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('6. basic red(nested)         : ${basicRedNestedNs.toStringAsFixed(1)} ns/call');
+  print(
+    '6. basic red(nested)         : ${basicRedNestedNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 7: Extended ansi256, nested string (nesting path) ---
   sw = Stopwatch()..start();
@@ -102,7 +116,9 @@ void main() {
   }
   sw.stop();
   final ext256NestedNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('7. ansi256(nested)           : ${ext256NestedNs.toStringAsFixed(1)} ns/call');
+  print(
+    '7. ansi256(nested)           : ${ext256NestedNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 8: Basic red, multi-nested string ---
   sw = Stopwatch()..start();
@@ -111,7 +127,9 @@ void main() {
   }
   sw.stop();
   final basicRedMultiNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('8. basic red(multi-nested)   : ${basicRedMultiNs.toStringAsFixed(1)} ns/call');
+  print(
+    '8. basic red(multi-nested)   : ${basicRedMultiNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 9: Extended ansi256, multi-nested string ---
   sw = Stopwatch()..start();
@@ -120,7 +138,9 @@ void main() {
   }
   sw.stop();
   final ext256MultiNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('9. ansi256(multi-nested)     : ${ext256MultiNs.toStringAsFixed(1)} ns/call');
+  print(
+    '9. ansi256(multi-nested)     : ${ext256MultiNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 10: reset (length-4 path), short plain ---
   sw = Stopwatch()..start();
@@ -129,7 +149,9 @@ void main() {
   }
   sw.stop();
   final resetShortNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('10. reset(short plain)       : ${resetShortNs.toStringAsFixed(1)} ns/call');
+  print(
+    '10. reset(short plain)       : ${resetShortNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 11: bold (length-5), short plain ---
   sw = Stopwatch()..start();
@@ -138,7 +160,9 @@ void main() {
   }
   sw.stop();
   final boldShortNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('11. bold(short plain)        : ${boldShortNs.toStringAsFixed(1)} ns/call');
+  print(
+    '11. bold(short plain)        : ${boldShortNs.toStringAsFixed(1)} ns/call',
+  );
 
   // --- Test 12: Extended styler creation overhead ---
   sw = Stopwatch()..start();
@@ -147,7 +171,9 @@ void main() {
   }
   sw.stop();
   final createExtNs = sw.elapsedMicroseconds * 1000 / iterations;
-  print('12. create ansi256(196)      : ${createExtNs.toStringAsFixed(1)} ns/call');
+  print(
+    '12. create ansi256(196)      : ${createExtNs.toStringAsFixed(1)} ns/call',
+  );
 
   print('');
   print('Done.');

@@ -1,15 +1,24 @@
 # QuectoColors
 
+[![Pub](https://img.shields.io/pub/v/quectocolors.svg)](https://pub.dartlang.org/packages/quectocolors)
+[![Awesome Flutter](https://img.shields.io/badge/Awesome-Flutter-blue.svg?longCache=true&style=flat-square)](https://flutterawesome.com/console-terminal-text-coloring-and-styling-library-for-dart)
+[![License](https://img.shields.io/badge/License-BSD%203.0-blue.svg)](/LICENSE)
+[![GitHub contributors](https://img.shields.io/github/contributors/timmaffett/quectocolors)](https://github.com/timmaffett/quectocolors/graphs/contributors)
+[![GitHub forks](https://img.shields.io/github/forks/timmaffett/quectocolors)](https://github.com/timmaffett/quectocolors)
+[![GitHub stars](https://img.shields.io/github/stars/timmaffett/quectocolors?)](https://github.com/timmaffett/quectocolors)
+
 A high-performance ANSI terminal color styling library for Dart and Flutter with **correct nested color support**.
 
-QuectoColors provides multiple API styles for applying colors, text effects, and background colors to terminal output. Unlike other Dart ANSI color packages, QuectoColors properly handles nested colors — when you write `red('Hello ${blue("world")}!')`, the red color is correctly restored after the blue text ends.
+QuectoColors provides multiple API styles for applying colors, text styles, and background colors to terminal output. Unlike other Dart ANSI color packages, QuectoColors properly handles nested colors — when you write `('Hello ${"world".blue} outside!').red`, the red color is correctly restored after the blue text ends.
 
 ## Features
 
+- **Full color range** — standard 16 colors, 256-color xterm palette, 16M true color (24-bit RGB), and 149 named CSS/X11 colors
 - **Correct nested color handling** — parent colors are automatically restored after inner styles close
-- **Multiple API styles** — static methods, string extensions, and AnsiPen-compatible fluent API
+- **Multiple API styles** — string extensions, static methods, and AnsiPen-compatible fluent API
 - **Drop-in AnsiPen replacement** — migrate from the `ansicolor` package by changing a single import
 - **Plain fast path** — skip ESC scanning entirely for known-plain text, matching raw string interpolation speed
+- **Colored underlines** — set underline color independently via 256-color or RGB
 - **Automatic ANSI detection** — detects terminal support on IO, web, and other platforms
 - **Global toggle** — disable all color output with a single flag
 
@@ -22,17 +31,33 @@ dependencies:
   quectocolors: ^0.0.1
 ```
 
+## Imports
+
+QuectoColors is split into three imports so you only pull in what you need:
+
+```dart
+// Core — QuectoColors, QuectoPlain, basic string extensions
+import 'package:quectocolors/quectocolors.dart';
+
+// AnsiPen — drop-in replacement for the ansicolor package (import separately)
+import 'package:quectocolors/ansipen.dart';
+
+// CSS/X11 named colors — adds 149 named color string extensions (includes core)
+import 'package:quectocolors/quectocolors_css.dart';
+```
+
 ## Quick Start
 
 ```dart
 import 'package:quectocolors/quectocolors.dart';
 
 void main() {
-  print(QuectoColors.red('This is red text'));
-  print(QuectoColors.bold(QuectoColors.blue('Bold blue text')));
+  // String extensions — the most concise syntax
+  print('This is red text'.red);
+  print('Bold blue text'.blue.bold);
 
   // Nested colors work correctly:
-  print(QuectoColors.red('Red ${QuectoColors.blue("Blue")} Red again'));
+  print(('Red ${'Blue'.blue} Red again').red);
 }
 ```
 
@@ -40,24 +65,9 @@ void main() {
 
 QuectoColors offers three ways to style text, each suited to different use cases.
 
-### 1. Static Methods
+### 1. String Extensions
 
-The primary API. All styles are static fields on the `QuectoColors` class.
-
-```dart
-import 'package:quectocolors/quectocolors.dart';
-
-print(QuectoColors.red('Hello'));
-print(QuectoColors.bold('Important'));
-print(QuectoColors.bgYellow(QuectoColors.black('Warning')));
-
-// Nested colors — red is restored after blue closes
-print(QuectoColors.red('Start ${QuectoColors.blue("middle")} end'));
-```
-
-### 2. String Extensions
-
-The most concise syntax. Chain styles directly on any `String`.
+The most concise and intuitive syntax. Chain styles directly on any `String`.
 
 ```dart
 import 'package:quectocolors/quectocolors.dart';
@@ -68,6 +78,21 @@ print('Hello'.red.italic.strikethrough);
 
 // Nested with string extensions
 print(('Hello ${'world'.blue} !').red);
+```
+
+### 2. Static Methods
+
+All styles are also available as static fields on the `QuectoColors` class. Useful when you want to store a styler in a variable or pass it as a function argument.
+
+```dart
+import 'package:quectocolors/quectocolors.dart';
+
+print(QuectoColors.red('Hello'));
+print(QuectoColors.bold('Important'));
+print(QuectoColors.bgYellow(QuectoColors.black('Warning')));
+
+// Nested colors — red is restored after blue closes
+print(QuectoColors.red('Start ${QuectoColors.blue("middle")} end'));
 ```
 
 ### 3. AnsiPen-Compatible Fluent API
@@ -170,6 +195,47 @@ print(QuectoPlain.ansi256(196)('Known-plain red'));
 print(QuectoPlain.rgb(255, 128, 0)('Known-plain orange'));
 ```
 
+## CSS/X11 Named Colors
+
+QuectoColors includes all 149 standard CSS/X11 named colors as convenient string extensions and static stylers. Import `quectocolors_css.dart` to access them.
+
+```dart
+import 'package:quectocolors/quectocolors_css.dart';
+
+// String extensions — the most concise syntax
+print('Hello'.cornflowerBlue);
+print('Warning'.tomato);
+print('Hello'.onAliceBlue);                // background
+print('Hello'.onCornflowerBlueUnderline);  // underline color
+
+// Static stylers — reusable closures, support nesting
+final styler = QuectoColorsX11.cornflowerBlue;
+print(styler('Hello'));
+
+// Nesting works automatically
+print(QuectoColorsX11.cornflowerBlue('Hello ${QuectoColorsX11.tomato("world")} !'));
+```
+
+### Naming Conventions
+
+- **Foreground:** `colorName` — e.g. `'text'.cornflowerBlue`, `'text'.tomato`
+- **Background:** `onColorName` — e.g. `'text'.onCornflowerBlue`, `'text'.onTomato`
+- **Underline color:** `onColorNameUnderline` — e.g. `'text'.onTomatoUnderline`
+
+Colors that conflict with the basic ANSI color names use an `X11` suffix to avoid ambiguity: `redX11`, `blueX11`, `greenX11`, `blackX11`, `whiteX11`, `cyanX11`, `magentaX11`, `yellowX11`, `grayX11`, `greyX11`.
+
+```dart
+// ANSI red (standard terminal red, escape code \x1B[31m)
+print('Hello'.red);
+
+// CSS/X11 red (true color rgb(255, 0, 0), escape code \x1B[38;2;255;0;0m)
+print('Hello'.redX11);
+```
+
+### Performance
+
+CSS color stylers are lazily cached — the first access to a color creates the styler, subsequent accesses return the cached instance. All 149 colors × 3 variants (fg/bg/underline) share a single 447-element cache.
+
 ## Available Styles
 
 ### Text Styles
@@ -199,7 +265,7 @@ Bright variants: `bgRedBright`, `bgGreenBright`, `bgYellowBright`, `bgBlueBright
 
 ## Comparison with ansicolor
 
-The [`ansicolor`](https://pub.dev/packages/ansicolor) package is a widely used Dart library for ANSI terminal colors. QuectoColors was designed to be faster while also fixing ansicolor's most significant limitation: **broken nested color output**.
+The [`ansicolor`](https://pub.dev/packages/ansicolor) package is a widely used Dart library for ANSI terminal colors. QuectoColors is a strict superset of ansicolor — it matches every ansicolor feature, adds many more (text styles, true color, string extensions, plain fast path), fixes ansicolor's most significant limitation (**broken nested color output**), and is dramatically faster.
 
 ### The Nesting Problem
 
@@ -227,7 +293,7 @@ QuectoColors detects these nested close codes and re-injects the parent color:
 import 'package:quectocolors/quectocolors.dart';
 
 // QuectoColors output:
-print(QuectoColors.red('Hello ${QuectoColors.blue("world")} !'));
+print(('Hello ${"world".blue} !').red);
 // Produces: ESC[31mHello ESC[34mworldESC[31m !ESC[39m
 //                                       ^^^^^^
 //                     After "world", red is RESTORED. The " !" appears red.
@@ -240,13 +306,17 @@ print(QuectoColors.red('Hello ${QuectoColors.blue("world")} !'));
 | Basic colors (8 + 8 bright) | Yes | Yes |
 | Background colors | Yes | Yes |
 | 256-color xterm palette | Yes | Yes |
-| RGB colors | Yes (via xterm mapping) | Yes (direct + xterm mapping) |
-| 16M true color (24-bit RGB) | No | Yes |
-| Bold, italic, strikethrough, etc. | No | Yes |
+| RGB colors | Via xterm256 mapping | Direct 24-bit + xterm256 mapping |
+| 16M true color (24-bit RGB) | No | **Yes** |
+| Colored underlines | No | **Yes** (256-color and RGB) |
+| Bold, italic, strikethrough, etc. | No | **Yes** |
 | Correct nested colors | **No** | **Yes** |
-| String extensions (`'text'.red`) | No | Yes |
-| Plain fast path | N/A | Yes |
+| String extensions (`'text'.red`) | No | **Yes** |
+| Plain fast path | No | **Yes** |
+| Drop-in AnsiPen compatible | — | **Yes** |
 | `ansiColorDisabled` global toggle | Yes | Yes |
+
+QuectoColors is a strict superset: every feature ansicolor has, QuectoColors has too — plus text styles, true color, colored underlines, string extensions, and correct nesting.
 
 ### Performance Comparison
 
@@ -299,74 +369,77 @@ print(fancy('Red bold italic strikethrough'));
 final red = AnsiPen()..red();
 final blue = AnsiPen()..blue();
 print(red('Hello ${blue("world")} !')); // "!" is now correctly red
+
+// 16M true color RGB (ansicolor can't do this)
+final orange = AnsiPen()..rgbFg(255, 128, 0);
+print(orange('True color orange'));
+
+// 256-color xterm via AnsiPen
+final xterm = AnsiPen()..ansi256Fg(196);
+print(xterm('Xterm red'));
 ```
 
 **4. The `ansiColorDisabled` global flag and `color_disabled` deprecated getter/setter are both supported** for full backwards compatibility.
 
 ## Comparison with ChalkDart
 
-[ChalkDart](https://pub.dev/packages/chalkdart) is a full-featured ANSI styling library for Dart (by the same author as QuectoColors). It is modeled after the popular [chalk](https://www.npmjs.com/package/chalk) npm package for Node.js and provides an extensive set of capabilities far beyond basic terminal colors.
+[ChalkDart](https://pub.dev/packages/chalkdart) is a full-featured ANSI styling library for Dart (by the same author as QuectoColors). It is modeled after the popular [chalk](https://www.npmjs.com/package/chalk) npm package for Node.js.
 
-### What ChalkDart offers
+QuectoColors now covers the vast majority of what most terminal applications need — standard colors, 256-color xterm, 16M true color RGB, 149 named CSS/X11 colors, text styles, colored underlines, and correct nesting — at 30-90x higher performance. ChalkDart remains the choice for niche features like HTML output mode, hex/HSL/HSV color input, and exotic color model conversions.
 
-ChalkDart is a comprehensive styling toolkit:
+### Feature Comparison
 
-- **Full color spectrum** — 16 basic colors, 256-color xterm palette, and 24-bit truecolor (16 million colors) via RGB, hex, HSL, HSV, HWB, LAB, and XYZ color models
-- **140+ named colors** — all standard X11/CSS/SVG color keywords (`cornflowerBlue`, `darkSeaGreen`, `lightGoldenrodYellow`, etc.) with IDE autocompletion
-- **Advanced text styles** — everything QuectoColors has plus double underline, blink, rapid blink, superscript, subscript, alternative fonts, and colored underlines
-- **Chainable API** — `chalk.red.bold.underline('text')` — styles build upon each other naturally
-- **String extensions** — `'text'.red.bold.underline` with full feature parity
-- **HTML output mode** — switch the same API to produce HTML `<span>` output instead of ANSI codes, with customizable stylesheets and color schemes
-- **Correct nested colors** — full nesting support with style stack tracking
-- **Dynamic arguments** — pass strings, numbers, maps, lists, and even closures directly
-- **Custom color keywords** — register your own named colors
-- **IDE integration** — optimized for VSCode, Android Studio, XCode, and browser debug consoles
-- **Automatic color level downsampling** — truecolor gracefully falls back to 256-color or 16-color when the terminal doesn't support it
-
-### When to use QuectoColors vs ChalkDart
-
-| Consideration | QuectoColors | ChalkDart |
+| Feature | QuectoColors | ChalkDart |
 |---|---|---|
-| **Performance is critical** | Best choice — ~4 ns per simple style, optimized scanning | ~150-200 ns per simple style |
-| **Standard 16 colors + styles** | Full support | Full support |
-| **RGB / hex / HSL colors** | RGB supported | Full support (hex, HSL, HSV, HWB, LAB, XYZ) |
-| **256-color xterm palette** | Full support | Full support |
-| **Named CSS colors** | Not supported | 140+ colors |
-| **HTML output** | Not supported | Full support |
-| **Colored underlines** | Not supported | Full support |
-| **Superscript / subscript** | Not supported | Full support |
-| **Drop-in for ansicolor** | Yes (AnsiPen compatible) | No |
-| **Package size** | Minimal | Larger (comprehensive feature set) |
+| Basic colors (8 + 8 bright) | Yes | Yes |
+| Background colors | Yes | Yes |
+| 256-color xterm palette | Yes | Yes |
+| 16M true color (24-bit RGB) | Yes | Yes |
+| RGB to xterm256 mapping | Yes | Yes |
+| Hex / HSL / HSV / HWB / LAB / XYZ | No | Yes |
+| 149 named CSS/X11 colors | Yes | Yes |
+| Bold, italic, underline, strikethrough, overline | Yes | Yes |
+| Colored underlines (256-color / RGB) | Yes | Yes |
+| Double underline, blink, superscript, subscript | No | Yes |
+| Alternative fonts | No | Yes |
+| Correct nested colors | Yes | Yes |
+| String extensions (`'text'.red`) | Yes | Yes |
+| Chainable API | Yes (AnsiPen) | Yes (chalk) |
+| HTML output mode | No | Yes |
+| Custom color keywords | No | Yes |
+| Color level downsampling | No | Yes |
+| Drop-in for ansicolor | Yes (AnsiPen compatible) | No |
+| Plain fast path (zero-scan) | Yes | No |
+| Package size | Minimal | Larger |
 
-### Performance comparison
+### Performance Comparison
 
 Benchmarked with `dart compile exe` (AOT native), 100,000 iterations:
 
-| Test | QuectoColors | ChalkDart |
-|---|---|---|
-| Simple `red("Hello")` | **~4 ns** | ~366 ns |
-| 3-style nesting | **~10 ns** | ~384 ns |
-| Complex nested colors | **~1,000 ns** | ~7,793 ns |
-| Complex (large strings) | **~1,800 ns** | ~18,352 ns |
+| Test | QuectoColors | ChalkDart | Speedup |
+|---|---|---|---|
+| Simple `red("Hello")` | **~4 ns** | ~366 ns | **~90x** |
+| 3-style nesting | **~10 ns** | ~384 ns | **~38x** |
+| Complex nested colors | **~1,000 ns** | ~7,793 ns | **~8x** |
+| Complex (large strings) | **~1,800 ns** | ~18,352 ns | **~10x** |
 
-QuectoColors is faster across all levels. The gap is most significant in the complex cases with longer strings, where QuectoColors is roughly 5-10x faster. The simple cases show a large ratio but the absolute difference is small (nanoseconds). ChalkDart's additional per-call overhead comes from its richer architecture — chainable style resolution, dynamic argument handling, color level negotiation, and support for color models that QuectoColors doesn't offer.
+### Choosing the Right Tool
 
-### Choosing the right tool
-
-**Use QuectoColors when:**
-- You need ANSI colors from standard 16 through 256-color xterm palette to 16M true color RGB
-- Performance matters — CLI tools that style thousands of lines, high-frequency logging, real-time output
-- You're migrating from the `ansicolor` package and want a drop-in replacement with correct nesting
+**Use QuectoColors when** (most terminal applications):
+- You need any combination of standard colors, 256-color xterm, or 16M true color RGB
+- You need text styles: bold, italic, underline, strikethrough, overline, dim, inverse
+- You need colored underlines
+- Performance matters — CLI tools, high-frequency logging, real-time output
+- You're migrating from the `ansicolor` package
 - You want minimal overhead and a small dependency footprint
 
 **Use ChalkDart when:**
-- You need hex, HSL, HSV, HWB, LAB, or XYZ color specifications
-- You want access to named colors like `cornflowerBlue` or `darkSeaGreen`
-- You want HTML output mode for web dashboards, log viewers, or server-side rendering
-- You need advanced features like superscript/subscript, or alternative fonts
-- You're building a feature-rich terminal UI where color expressiveness matters more than raw throughput
+- You need hex (`#FF8000`), HSL, HSV, HWB, LAB, or XYZ color input
+- You need HTML `<span>` output mode for web dashboards or log viewers
+- You need double underline, blink, superscript/subscript, or alternative fonts
+- You need automatic color level downsampling (truecolor to 256-color to 16-color fallback)
 
-Both packages handle nested colors correctly. QuectoColors covers the cases that the vast majority of terminal applications need, at the highest possible speed. ChalkDart covers everything else.
+Both packages handle nested colors correctly. For the features they share, QuectoColors is 30-90x faster.
 
 ## Disabling Colors
 

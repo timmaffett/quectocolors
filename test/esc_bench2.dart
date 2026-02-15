@@ -24,7 +24,8 @@ final String shortPlain = 'Hello ';
 final String medPlain =
     'Hello World this is a medium length test string for perf';
 final String longPlain = String.fromCharCodes(
-    List.generate(200, (i) => 97 + Random(42).nextInt(26)));
+  List.generate(200, (i) => 97 + Random(42).nextInt(26)),
+);
 final String shortWithEsc = '\x1B[34mHello \x1B[39m';
 final String longWithEscMid =
     longPlain.substring(0, 100) + closeCode + longPlain.substring(100);
@@ -118,7 +119,9 @@ void benchInt(String label, IntBench fn, int expected) {
   sw.stop();
   final ns = (sw.elapsedMicroseconds * 1000) ~/ iterations;
   final ok = r == expected ? '' : ' *** WRONG ($r != $expected)';
-  print('  ${label.padRight(44)} ${sw.elapsedMilliseconds.toString().padLeft(6)}ms  ${ns.toString().padLeft(5)}ns/call$ok');
+  print(
+    '  ${label.padRight(44)} ${sw.elapsedMilliseconds.toString().padLeft(6)}ms  ${ns.toString().padLeft(5)}ns/call$ok',
+  );
 }
 
 void benchBool(String label, BoolBench fn, bool expected) {
@@ -129,7 +132,9 @@ void benchBool(String label, BoolBench fn, bool expected) {
   sw.stop();
   final ns = (sw.elapsedMicroseconds * 1000) ~/ iterations;
   final ok = r == expected ? '' : ' *** WRONG ($r != $expected)';
-  print('  ${label.padRight(44)} ${sw.elapsedMilliseconds.toString().padLeft(6)}ms  ${ns.toString().padLeft(5)}ns/call$ok');
+  print(
+    '  ${label.padRight(44)} ${sw.elapsedMilliseconds.toString().padLeft(6)}ms  ${ns.toString().padLeft(5)}ns/call$ok',
+  );
 }
 
 void runFindSuite(String name, String testStr) {
@@ -139,12 +144,32 @@ void runFindSuite(String name, String testStr) {
   final expected = testStr.indexOf(closeCode);
   print('  Expected: $expected\n');
 
-  benchInt('A. Original indexOf(closeCode)',       () => original(testStr, 0), expected);
-  benchInt('B. contains(ESC) + indexOf',           () => containsGateOriginal(testStr, 0), expected);
-  benchInt('C. Custom unrolled (len=5)',            () => unrolled5(testStr, 0), expected);
-  benchInt('D. contains(ESC) + unrolled',           () => containsGateUnrolled(testStr, 0), expected);
-  benchInt('E. indexOf(ESC) + indexOf from pos',    () => indexOfEscBridge(testStr, 0), expected);
-  benchInt('F. indexOf(ESC) + unrolled from pos',   () => indexOfEscUnrolled(testStr, 0), expected);
+  benchInt(
+    'A. Original indexOf(closeCode)',
+    () => original(testStr, 0),
+    expected,
+  );
+  benchInt(
+    'B. contains(ESC) + indexOf',
+    () => containsGateOriginal(testStr, 0),
+    expected,
+  );
+  benchInt('C. Custom unrolled (len=5)', () => unrolled5(testStr, 0), expected);
+  benchInt(
+    'D. contains(ESC) + unrolled',
+    () => containsGateUnrolled(testStr, 0),
+    expected,
+  );
+  benchInt(
+    'E. indexOf(ESC) + indexOf from pos',
+    () => indexOfEscBridge(testStr, 0),
+    expected,
+  );
+  benchInt(
+    'F. indexOf(ESC) + unrolled from pos',
+    () => indexOfEscUnrolled(testStr, 0),
+    expected,
+  );
 }
 
 void runEscDetectSuite(String name, String testStr) {
@@ -154,8 +179,8 @@ void runEscDetectSuite(String name, String testStr) {
   final expected = testStr.contains('\x1B');
   print('  Expected: $expected\n');
 
-  benchBool('codeUnitAt loop',  () => hasEsc_codeUnitAt(testStr), expected);
-  benchBool('contains(ESC)',    () => hasEsc_contains(testStr), expected);
+  benchBool('codeUnitAt loop', () => hasEsc_codeUnitAt(testStr), expected);
+  benchBool('contains(ESC)', () => hasEsc_contains(testStr), expected);
   benchBool('indexOf(ESC)!=-1', () => hasEsc_indexOf(testStr), expected);
 }
 

@@ -7,7 +7,8 @@ import 'dart:math';
 const int iterations = 500000;
 
 final String randomString = String.fromCharCodes(
-    List.generate(200, (i) => 97 + Random(42).nextInt(26)));
+  List.generate(200, (i) => 97 + Random(42).nextInt(26)),
+);
 
 void bench(String label, String Function() fn) {
   // Warmup
@@ -21,7 +22,9 @@ void bench(String label, String Function() fn) {
   sw.stop();
 
   final ns = (sw.elapsedMicroseconds * 1000) ~/ iterations;
-  print('${label.padRight(55)} ${sw.elapsedMilliseconds.toString().padLeft(6)}ms  ${ns.toString().padLeft(6)}ns/iter');
+  print(
+    '${label.padRight(55)} ${sw.elapsedMilliseconds.toString().padLeft(6)}ms  ${ns.toString().padLeft(6)}ns/iter',
+  );
 }
 
 void main() {
@@ -37,59 +40,68 @@ void main() {
   print('=== SIMPLE: single color on short string ===');
   print('Iterations: $iterations\n');
 
-  bench('QuectoColors  red("Hello ")',
-      () => QuectoColors.red('Hello '));
-  bench('AnsiColor     red("Hello ")',
-      () => acRed('Hello '));
+  bench('QuectoColors  red("Hello ")', () => QuectoColors.red('Hello '));
+  bench('AnsiColor     red("Hello ")', () => acRed('Hello '));
 
   print('\n=== SIMPLE 3-STYLES: strikethrough(italic(red(...))) ===\n');
 
-  bench('QuectoColors  strikethrough(italic(red(...)))',
-      () => QuectoColors.strikethrough(QuectoColors.italic(QuectoColors.red('Hello '))));
+  bench(
+    'QuectoColors  strikethrough(italic(red(...)))',
+    () => QuectoColors.strikethrough(
+      QuectoColors.italic(QuectoColors.red('Hello ')),
+    ),
+  );
 
   print('\n=== COMPLEX: nested colors (200-char random strings) ===\n');
 
   final string = randomString;
 
-  bench('QuectoColors  nested', () =>
-      QuectoColors.red('Hello ' +
+  bench(
+    'QuectoColors  nested',
+    () => QuectoColors.red(
+      'Hello ' +
           QuectoColors.blue(string) +
-          QuectoColors.green('Here is ' +
-              QuectoColors.yellow(string) +
-              ' end') +
-          ' end of red'));
+          QuectoColors.green(
+            'Here is ' + QuectoColors.yellow(string) + ' end',
+          ) +
+          ' end of red',
+    ),
+  );
 
-  bench('AnsiColor     (no nesting support)', () =>
-      acRed('Hello ' +
+  bench(
+    'AnsiColor     (no nesting support)',
+    () => acRed(
+      'Hello ' +
           acBlue(string) +
-          acGreen('Here is ' +
-              acYellow(string) +
-              ' end') +
-          ' end of red'));
+          acGreen('Here is ' + acYellow(string) + ' end') +
+          ' end of red',
+    ),
+  );
 
-  bench('String ext    (.red etc)', () =>
-      ('Hello ' +
-          string.blue +
-          ('Here is ' + string.yellow + ' end').green +
-          ' end of red').red);
+  bench(
+    'String ext    (.red etc)',
+    () =>
+        ('Hello ' +
+                string.blue +
+                ('Here is ' + string.yellow + ' end').green +
+                ' end of red')
+            .red,
+  );
 
   print('\n=== PLAIN FAST PATH: single color, known-plain text ===\n');
 
-  bench('QuectoPlain   red("Hello ")',
-      () => QuectoPlain.red('Hello '));
-  bench('QuectoColors  (normal) red("Hello ")',
-      () => QuectoColors.red('Hello '));
-  bench('AnsiColor     (no nesting)  red("Hello ")',
-      () => acRed('Hello '));
+  bench('QuectoPlain   red("Hello ")', () => QuectoPlain.red('Hello '));
+  bench(
+    'QuectoColors  (normal) red("Hello ")',
+    () => QuectoColors.red('Hello '),
+  );
+  bench('AnsiColor     (no nesting)  red("Hello ")', () => acRed('Hello '));
 
   print('\n=== PLAIN FAST PATH: 200-char random string ===\n');
 
-  bench('QuectoPlain   red(200-char)',
-      () => QuectoPlain.red(string));
-  bench('QuectoColors  (normal) red(200-char)',
-      () => QuectoColors.red(string));
-  bench('AnsiColor     (no nesting)  red(200-char)',
-      () => acRed(string));
+  bench('QuectoPlain   red(200-char)', () => QuectoPlain.red(string));
+  bench('QuectoColors  (normal) red(200-char)', () => QuectoColors.red(string));
+  bench('AnsiColor     (no nesting)  red(200-char)', () => acRed(string));
 
   // Verify correctness
   print('\n=== CORRECTNESS CHECK ===');

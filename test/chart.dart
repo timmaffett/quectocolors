@@ -5,17 +5,17 @@ class AsciiChart {
   static String unicodeLowerBlocks = '▄	▅';
 
   static String tick = '█'; //'▇';
- // static String tick2 = '░';//	▒
+  // static String tick2 = '░';//	▒
   static String smallTick = '▏';
 
-  static int calls=0;
+  static int calls = 0;
 
   /// Assumes percent is 0-100.0 scale (it can be 400%, etc, but 100 based
-  static String getPercentLine( double percent, double percentPerChar ) {
+  static String getPercentLine(double percent, double percentPerChar) {
     calls++;
     //double percentPerChar = 100.0 / totalWidth.toDouble();
 
-    if(percentPerChar<1.0) {
+    if (percentPerChar < 1.0) {
       percentPerChar = 1.0;
     }
 
@@ -23,7 +23,7 @@ class AsciiChart {
 
     StringBuffer sb = StringBuffer();
     double where = 0.0;
-    while(where<percent) {
+    while (where < percent) {
       //alternate rows//sb.write((calls%2==0) ? tick2 : tick);
       sb.write(tick);
       where += percentPerChar;
@@ -32,28 +32,30 @@ class AsciiChart {
     return sb.toString();
   }
 
-  static String getLineBarGraph( double totalValue, double unitsPerBlock, String unitsPerBlockString ) {
+  static String getLineBarGraph(
+    double totalValue,
+    double unitsPerBlock,
+    String unitsPerBlockString,
+  ) {
     StringBuffer sb = StringBuffer();
     double where = 0;
-    while(where<totalValue) {
+    while (where < totalValue) {
       sb.write(tick);
-      where+=unitsPerBlock;
+      where += unitsPerBlock;
     }
     sb.write(' ${totalValue.toStringAsFixed(1)} $unitsPerBlockString');
     return sb.toString();
   }
 
-
-  static String namePaddedToLength( String name, int pad ) {
-    if(name.length>pad) {
-      return name.substring(0,pad);  // take first `pad` chars
+  static String namePaddedToLength(String name, int pad) {
+    if (name.length > pad) {
+      return name.substring(0, pad); // take first `pad` chars
     } else {
       return name.padRight(pad);
     }
   }
 
-
-/*
+  /*
 
 Block Elements[1]
 Official Unicode Consortium code chart (PDF)
@@ -62,7 +64,6 @@ U+258x	▀	▁	▂	▃	▄	▅	▆	▇	█	▉	▊	▋	▌	▍	▎	▏
 U+259x	▐	░	▒	▓	▔	▕	▖	▗	▘	▙	▚	▛	▜	▝	▞	▟
 
 */
-
 }
 
 /*

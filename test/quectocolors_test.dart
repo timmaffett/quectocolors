@@ -1,6 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
-import 'package:quectocolors/quectocolors.dart';
+import 'package:quectocolors/quectocolors_css.dart';
+import 'package:quectocolors/ansipen.dart';
 
 void main() {
   // flutter test runs without a terminal, so ansiColorDisabled defaults to true.
@@ -118,7 +119,11 @@ void main() {
       final openCode = '\x1B[38;5;196m';
       final count = openCode.allMatches(result).length;
       // Initial open + after inner1 close + after inner2 close = 3
-      expect(count, 3, reason: 'Expected 3 occurrences of 256-color open code: ${esc(result)}');
+      expect(
+        count,
+        3,
+        reason: 'Expected 3 occurrences of 256-color open code: ${esc(result)}',
+      );
     });
 
     test('bg 256-color nesting with bg basic color', () {
@@ -291,7 +296,9 @@ void main() {
     });
 
     test('chaining extended with basic styles', () {
-      final pen = AnsiPen()..ansi256Fg(196)..bold;
+      final pen = AnsiPen()
+        ..ansi256Fg(196)
+        ..bold;
       final result = pen('Hello');
       // bold wraps around ansi256Fg (stack applies inner-to-outer)
       expect(result, contains('\x1B[38;5;196m'));
@@ -302,6 +309,141 @@ void main() {
       final pen = AnsiPen();
       final returned = pen.ansi256Fg(196);
       expect(identical(returned, pen), isTrue);
+    });
+  });
+
+  group('AnsiPen ansicolor-compatible methods', () {
+    test('rgb with named params (ansicolor syntax)', () {
+      // ansicolor: AnsiPen()..white()..rgb(r: 1.0, g: 0.8, b: 0.2, bg: true)
+      final pen = AnsiPen()..white()..rgb(r: 1.0, g: 0.8, b: 0.2, bg: true);
+      final result = pen('Hello');
+      // white fg wraps rgb bg
+      expect(result, contains('\x1B[37m'));   // white fg
+      expect(result, contains('\x1B[48;5;')); // bg xterm256
+    });
+
+    test('rgb foreground maps to xterm256', () {
+      // r=1.0, g=0.0, b=0.0 => 5*36 + 0*6 + 0 + 16 = 196
+      final pen = AnsiPen()..rgb(r: 1.0, g: 0.0, b: 0.0);
+      final result = pen('Hello');
+      expect(result, '\x1B[38;5;196mHello\x1B[39m');
+    });
+
+    test('rgb background with bg: true', () {
+      final pen = AnsiPen()..rgb(r: 0.0, g: 0.0, b: 1.0, bg: true);
+      final result = pen('Hello');
+      // b=1.0 => 0*36 + 0*6 + 5 + 16 = 21
+      expect(result, '\x1B[48;5;21mHello\x1B[49m');
+    });
+
+    test('gray with no args gives ANSI gray', () {
+      final pen = AnsiPen()..gray();
+      final result = pen('Hello');
+      expect(result, '\x1B[90mHello\x1B[39m');
+    });
+
+    test('gray with level maps to xterm256 grayscale', () {
+      // level=0.5 => 232 + round(0.5 * 23) = 232 + 12 = 244
+      final pen = AnsiPen()..gray(level: 0.5);
+      final result = pen('Hello');
+      expect(result, '\x1B[38;5;244mHello\x1B[39m');
+    });
+
+    test('gray with bg: true and no level gives bgGray', () {
+      final pen = AnsiPen()..gray(bg: true);
+      final result = pen('Hello');
+      expect(result, '\x1B[100mHello\x1B[49m');
+    });
+
+    test('gray with level and bg: true gives xterm256 bg', () {
+      final pen = AnsiPen()..gray(level: 0.5, bg: true);
+      final result = pen('Hello');
+      expect(result, '\x1B[48;5;244mHello\x1B[49m');
+    });
+
+    test('grey is alias for gray', () {
+      final pen = AnsiPen()..grey(level: 0.5);
+      final result = pen('Hello');
+      expect(result, '\x1B[38;5;244mHello\x1B[39m');
+    });
+
+    test('xterm direct index', () {
+      final pen = AnsiPen()..xterm(196);
+      final result = pen('Hello');
+      expect(result, '\x1B[38;5;196mHello\x1B[39m');
+    });
+
+    test('xterm with bg: true', () {
+      final pen = AnsiPen()..xterm(21, bg: true);
+      final result = pen('Hello');
+      expect(result, '\x1B[48;5;21mHello\x1B[49m');
+    });
+
+    test('xterm clamps out-of-range values', () {
+      final pen1 = AnsiPen()..xterm(-5);
+      expect(pen1('X'), '\x1B[38;5;0mX\x1B[39m');
+
+      final pen2 = AnsiPen()..xterm(999);
+      expect(pen2('X'), '\x1B[38;5;255mX\x1B[39m');
+    });
+
+    test('cascade syntax works (..rgb)', () {
+      // This is the exact syntax from the user's question
+      AnsiPen pen = AnsiPen()
+        ..white()
+        ..rgb(r: 1.0, g: 0.8, b: 0.2, bg: true);
+      final result = pen('White foreground with a peach background');
+      expect(result, contains('\x1B[37m'));   // white fg
+      expect(result, contains('\x1B[48;5;')); // bg xterm256
+    });
+
+    test('down returns open codes only', () {
+      final pen = AnsiPen()..red();
+      final down = pen.down;
+      expect(down, '\x1B[31m');
+      // Should not contain close code
+      expect(down, isNot(contains('\x1B[39m')));
+    });
+
+    test('up returns reset code', () {
+      final pen = AnsiPen()..red();
+      expect(pen.up, '\x1B[0m');
+    });
+
+    test('toString equals down', () {
+      final pen = AnsiPen()..red();
+      expect('$pen', pen.down);
+    });
+
+    test('interpolated string equals write()', () {
+      final pen = AnsiPen()..red();
+      expect('${pen}Test${pen.up}', pen.down + 'Test' + pen.up);
+    });
+
+    test('down with multiple styles', () {
+      final pen = AnsiPen()
+        ..red()
+        ..bold;
+      final down = pen.down;
+      expect(down, contains('\x1B[31m'));
+      expect(down, contains('\x1B[1m'));
+    });
+
+    test('down empty pen returns empty string', () {
+      final pen = AnsiPen();
+      expect(pen.down, '');
+    });
+
+    test('up respects ansiColorDisabled', () {
+      final wasDisabled = ansiColorDisabled;
+      try {
+        ansiColorDisabled = true;
+        final pen = AnsiPen()..red();
+        expect(pen.up, '');
+        expect(pen.down, '');
+      } finally {
+        ansiColorDisabled = wasDisabled;
+      }
     });
   });
 
@@ -372,6 +514,108 @@ void main() {
       final r2 = styler('World');
       expect(r1, '\x1B[38;5;196mHello\x1B[39m');
       expect(r2, '\x1B[38;5;196mWorld\x1B[39m');
+    });
+  });
+
+  group('CSS/X11 named colors (QuectoColorsX11)', () {
+    test('aliceBlue foreground produces correct RGB code', () {
+      final result = QuectoColorsX11.aliceBlue('Hello');
+      expect(result, '\x1B[38;2;240;248;255mHello\x1B[39m');
+    });
+
+    test('onAliceBlue background produces correct RGB code', () {
+      final result = QuectoColorsX11.onAliceBlue('Hello');
+      expect(result, '\x1B[48;2;240;248;255mHello\x1B[49m');
+    });
+
+    test('onAliceBlueUnderline produces correct RGB code', () {
+      final result = QuectoColorsX11.onAliceBlueUnderline('Hello');
+      expect(result, '\x1B[58;2;240;248;255mHello\x1B[59m');
+    });
+
+    test('cornflowerBlue foreground', () {
+      final result = QuectoColorsX11.cornflowerBlue('Hello');
+      expect(result, '\x1B[38;2;100;149;237mHello\x1B[39m');
+    });
+
+    test('tomato foreground', () {
+      final result = QuectoColorsX11.tomato('Hello');
+      expect(result, '\x1B[38;2;255;99;71mHello\x1B[39m');
+    });
+
+    test('onTomato background', () {
+      final result = QuectoColorsX11.onTomato('Hello');
+      expect(result, '\x1B[48;2;255;99;71mHello\x1B[49m');
+    });
+
+    test('X11-suffixed colors avoid ANSI name conflicts', () {
+      // redX11 is CSS red (255,0,0) — distinct from ANSI red (\x1B[31m)
+      final result = QuectoColorsX11.redX11('Hello');
+      expect(result, '\x1B[38;2;255;0;0mHello\x1B[39m');
+    });
+
+    test('blackX11 foreground', () {
+      final result = QuectoColorsX11.blackX11('Hello');
+      expect(result, '\x1B[38;2;0;0;0mHello\x1B[39m');
+    });
+
+    test('whiteX11 foreground', () {
+      final result = QuectoColorsX11.whiteX11('Hello');
+      expect(result, '\x1B[38;2;255;255;255mHello\x1B[39m');
+    });
+
+    test('yellowGreen foreground', () {
+      final result = QuectoColorsX11.yellowGreen('Hello');
+      expect(result, '\x1B[38;2;154;205;50mHello\x1B[39m');
+    });
+
+    test('cache returns same styler on repeated access', () {
+      final styler1 = QuectoColorsX11.tomato;
+      final styler2 = QuectoColorsX11.tomato;
+      expect(identical(styler1, styler2), isTrue);
+    });
+
+    test('nesting works with CSS colors', () {
+      final outer = QuectoColorsX11.cornflowerBlue;
+      final inner = QuectoColorsX11.tomato('inner');
+      final result = outer('before $inner after');
+      // cornflowerBlue should be re-injected after tomato closes
+      expect(result, contains('\x1B[38;2;100;149;237m after'));
+      expect(result, endsWith('\x1B[39m'));
+    });
+  });
+
+  group('CSS/X11 string extensions (QuectoColorsCSSStrings)', () {
+    test('foreground string extension', () {
+      final result = 'Hello'.tomato;
+      expect(result, '\x1B[38;2;255;99;71mHello\x1B[39m');
+    });
+
+    test('background string extension', () {
+      final result = 'Hello'.onTomato;
+      expect(result, '\x1B[48;2;255;99;71mHello\x1B[49m');
+    });
+
+    test('underline color string extension', () {
+      final result = 'Hello'.onTomatoUnderline;
+      expect(result, '\x1B[58;2;255;99;71mHello\x1B[59m');
+    });
+
+    test('X11-suffixed string extension', () {
+      final result = 'Hello'.redX11;
+      expect(result, '\x1B[38;2;255;0;0mHello\x1B[39m');
+    });
+
+    test('chaining CSS color with basic style', () {
+      final result = 'Hello'.cornflowerBlue.bold;
+      expect(result, startsWith('\x1B[1m'));
+      expect(result, endsWith('\x1B[22m'));
+      expect(result, contains('\x1B[38;2;100;149;237m'));
+    });
+
+    test('CSS bg + basic fg chaining', () {
+      final result = 'Hello'.onCornflowerBlue;
+      expect(result, '\x1B[48;2;100;149;237mHello\x1B[49m');
     });
   });
 }
