@@ -3,7 +3,7 @@ description: >-
   High-performance ANSI terminal color styling for Dart. Supports 16 colors,
   256-color xterm palette, 16M true color RGB, 149 CSS/X11 named colors,
   and proper nested color handling.
-version: 1.0.1
+version: 1.0.2
 repository: https://github.com/timmaffett/quectocolors
 homepage: https://github.com/timmaffett/quectocolors
 topics:

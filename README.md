@@ -30,23 +30,26 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  quectocolors: ^1.0.1
+  quectocolors: ^1.0.2
 ```
 
 ## Imports
 
-QuectoColors is split into three imports so you only pull in what you need:
+QuectoColors has three imports:
 
 ```dart
-// Core — QuectoColors, QuectoPlain, basic string extensions
+// Everything — core colors, extras (aliases, hex, ANSI stripping), and 149 CSS/X11 named colors
 import 'package:quectocolors/quectocolors.dart';
+
+// Small — core only (QuectoColors, QuectoPlain, basic string extensions)
+// Use this for minimal autocomplete noise or to avoid CSS extension conflicts
+import 'package:quectocolors/small.dart';
 
 // AnsiPen — drop-in replacement for the ansicolor package (import separately)
 import 'package:quectocolors/ansipen.dart';
-
-// CSS/X11 named colors — adds 149 named color string extensions (includes core)
-import 'package:quectocolors/quectocolors_css.dart';
 ```
+
+Dart's tree-shaker strips unused code from compiled executables, so importing `quectocolors.dart` (everything) has no binary size penalty over `small.dart`. The main reason to use `small.dart` is to keep IDE autocomplete clean or avoid extension method conflicts with other packages.
 
 ## Quick Start
 
@@ -199,10 +202,10 @@ print(QuectoPlain.rgb(255, 128, 0)('Known-plain orange'));
 
 ## CSS/X11 Named Colors
 
-QuectoColors includes all 149 standard CSS/X11 named colors as convenient string extensions and static stylers. Import `quectocolors_css.dart` to access them.
+QuectoColors includes all 149 standard CSS/X11 named colors as convenient string extensions and static stylers. These are included in the default `quectocolors.dart` import.
 
 ```dart
-import 'package:quectocolors/quectocolors_css.dart';
+import 'package:quectocolors/quectocolors.dart';
 
 // String extensions — the most concise syntax
 print('Hello'.cornflowerBlue);
@@ -252,6 +255,10 @@ CSS color stylers are lazily cached — the first access to a color creates the 
 | `inverse` | reversed colors |
 | `hidden` | hidden text |
 | `strikethrough` | ~~strikethrough text~~ |
+| `blink` | slow blink (SGR 5) |
+| `rapidBlink` | rapid blink (SGR 6, not widely supported) |
+| `superscript` | superscript (SGR 73, not widely supported) |
+| `subscript` | subscript (SGR 74, not widely supported) |
 
 ### Foreground Colors
 
@@ -264,6 +271,71 @@ Bright variants: `redBright`, `greenBright`, `yellowBright`, `blueBright`, `mage
 `bgBlack`, `bgRed`, `bgGreen`, `bgYellow`, `bgBlue`, `bgMagenta`, `bgCyan`, `bgWhite`, `bgGray`
 
 Bright variants: `bgRedBright`, `bgGreenBright`, `bgYellowBright`, `bgBlueBright`, `bgMagentaBright`, `bgCyanBright`, `bgWhiteBright`
+
+### `on*` Background Color Aliases
+
+Every `bg*` color has a corresponding `on*` alias that reads more naturally:
+
+`onBlack`, `onRed`, `onGreen`, `onYellow`, `onBlue`, `onMagenta`, `onCyan`, `onWhite`, `onGray`
+
+Bright variants: `onRedBright`, `onGreenBright`, `onYellowBright`, `onBlueBright`, `onMagentaBright`, `onCyanBright`, `onWhiteBright`
+
+Extended: `onAnsi256(code)`, `onRgb(r, g, b)`
+
+These aliases are available on `QuectoPlain`, `QuectoColors`, and the string extensions.
+
+## Extras Extension
+
+The default `quectocolors.dart` import includes additional string extension methods: style aliases, hex color input, `brightXYZ` naming aliases, and ANSI stripping utilities. (These are not available with `small.dart`.)
+
+### Style Aliases
+
+| Alias | Equivalent |
+|---|---|
+| `normal` | `reset` |
+| `underlined` | `underline` |
+| `overlined` | `overline` |
+| `invert` | `inverse` |
+
+### `brightXYZ` Foreground Aliases
+
+Alternate naming for the bright color variants:
+
+`brightRed`, `brightGreen`, `brightYellow`, `brightBlue`, `brightMagenta`, `brightCyan`, `brightWhite`, `brightBlack`
+
+### `brightXYZ` Background Aliases
+
+`bgBrightRed`, `bgBrightGreen`, `bgBrightYellow`, `bgBrightBlue`, `bgBrightMagenta`, `bgBrightCyan`, `bgBrightWhite`, `bgBrightBlack`
+
+`onBrightRed`, `onBrightGreen`, `onBrightYellow`, `onBrightBlue`, `onBrightMagenta`, `onBrightCyan`, `onBrightWhite`, `onBrightBlack`
+
+### `visible`
+
+Returns the string as-is when ANSI colors are enabled, or an empty string when disabled. Useful for text that should only appear in color-capable terminals.
+
+```dart
+print('${'✓ '.visible}Done');
+```
+
+### Hex Color Methods
+
+Set foreground or background color from a hex value. Accepts multiple formats: `'#FF0000'`, `'FF0000'`, `'#F00'`, `'F00'`, `0xFF0000`.
+
+```dart
+print('Hello'.hex('#FF8000'));           // orange foreground
+print('Hello'.onHex('#003366'));         // dark blue background
+print('Hello'.bgHex(0x003366));          // same as onHex
+```
+
+### ANSI Stripping Utilities
+
+```dart
+final styled = 'Hello'.red.bold;
+
+styled.stripAnsi;          // 'Hello' — all ANSI SGR codes removed
+styled.ansiLength;         // total character length of ANSI escape sequences
+styled.lengthWithoutAnsi;  // visible character length (length - ansiLength)
+```
 
 ## Comparison with ansicolor
 
@@ -387,7 +459,7 @@ print(xterm('Xterm red'));
 
 [ChalkDart](https://pub.dev/packages/chalkdart) is a full-featured ANSI styling library for Dart (by the same author as QuectoColors). It is modeled after the popular [chalk](https://www.npmjs.com/package/chalk) npm package for Node.js.
 
-QuectoColors now covers the vast majority of what most terminal applications need — standard colors, 256-color xterm, 16M true color RGB, 149 named CSS/X11 colors, text styles, colored underlines, and correct nesting — at 30-90x higher performance. ChalkDart remains the choice for niche features like HTML output mode, hex/HSL/HSV color input, and exotic color model conversions.
+QuectoColors now covers the vast majority of what most terminal applications need — standard colors, 256-color xterm, 16M true color RGB, hex color input, 149 named CSS/X11 colors, text styles, blink, superscript/subscript, colored underlines, ANSI stripping utilities, and correct nesting — at 30-90x higher performance. ChalkDart remains the choice for niche features like HTML output mode, HSL/HSV/HWB/LAB/XYZ color input, and exotic color model conversions.
 
 ### Feature Comparison
 
@@ -398,11 +470,13 @@ QuectoColors now covers the vast majority of what most terminal applications nee
 | 256-color xterm palette | Yes | Yes |
 | 16M true color (24-bit RGB) | Yes | Yes |
 | RGB to xterm256 mapping | Yes | Yes |
-| Hex / HSL / HSV / HWB / LAB / XYZ | No | Yes |
+| Hex color input | Yes (extras) | Yes |
+| HSL / HSV / HWB / LAB / XYZ | No | Yes |
 | 149 named CSS/X11 colors | Yes | Yes |
 | Bold, italic, underline, strikethrough, overline | Yes | Yes |
 | Colored underlines (256-color / RGB) | Yes | Yes |
-| Double underline, blink, superscript, subscript | No | Yes |
+| Blink, superscript, subscript | Yes | Yes |
+| Double underline | No | Yes |
 | Alternative fonts | No | Yes |
 | Correct nested colors | Yes | Yes |
 | String extensions (`'text'.red`) | Yes | Yes |
@@ -436,9 +510,9 @@ Benchmarked with `dart compile exe` (AOT native), 100,000 iterations:
 - You want minimal overhead and a small dependency footprint
 
 **Use ChalkDart when:**
-- You need hex (`#FF8000`), HSL, HSV, HWB, LAB, or XYZ color input
+- You need HSL, HSV, HWB, LAB, or XYZ color input
 - You need HTML `<span>` output mode for web dashboards or log viewers
-- You need double underline, blink, superscript/subscript, or alternative fonts
+- You need double underline or alternative fonts
 - You need automatic color level downsampling (truecolor to 256-color to 16-color fallback)
 
 Both packages handle nested colors correctly. For the features they share, QuectoColors is 30-90x faster.

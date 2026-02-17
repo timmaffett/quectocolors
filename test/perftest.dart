@@ -73,6 +73,7 @@ void runTests(TestLevels testMode, int consoleWidth) {
   List<double> percentList = [];
   List<double> timePerIterationList = [];
   List<QuectoStyler> stylerList = [];
+  List<String> noteList = [];
 
   const ResultsToPrint printSomeResults =
       ResultsToPrint.oneAtStart; //someAtStartAndEnd;
@@ -227,6 +228,7 @@ void runTests(TestLevels testMode, int consoleWidth) {
   percentList.add(percent_0div1 * 100.0);
   timePerIterationList.add(timeQuectoColorsStatic);
   stylerList.add(QuectoColors.cyanBright);
+  noteList.add('');
 
   nameFormatted = AsciiChart.namePaddedToLength('QuectoColors', 20);
   //percentChart.add( (nameFormatted + AsciiChart.getPercent(100,100)).magentaBright );
@@ -236,6 +238,73 @@ void runTests(TestLevels testMode, int consoleWidth) {
   ); // 100% for QuectoColors, as that is our 'reference' alogorithm
   timePerIterationList.add(timeQuectoColors);
   stylerList.add(QuectoColors.magentaBright);
+  noteList.add('');
+
+  // --- QuectoPlain (fastest, zero ESC scanning) ---
+  // Only applicable when the source string is known-plain (no nested ANSI).
+  // For complex/largerandom_complex tests the input contains ANSI codes,
+  // so QuectoPlain is not appropriate and we skip it.
+  double timeQuectoPlain = timeQuectoColors; // fallback for chart if skipped
+  if (testMode == TestLevels.simple || testMode == TestLevels.simple_3styles) {
+    print('-----------------------------------------------\n'.magentaBright);
+
+    final stopwatchPlain = Stopwatch()..start();
+    QuectoStyler plainStyle = QuectoPlain.red;
+
+    for (var i = 0; i < iterations; i++) {
+      late final String outStr;
+      switch (testMode) {
+        case TestLevels.simple:
+          outStr = plainStyle('Hello ');
+        case TestLevels.simple_3styles:
+          // All three close codes differ (39m, 23m, 29m) so QuectoPlain
+          // produces correct output — no nesting conflict to resolve.
+          outStr = QuectoPlain.strikethrough(
+            QuectoPlain.italic(QuectoPlain.red('Hello ')),
+          );
+        default:
+          outStr = ''; // unreachable
+      }
+      if (printSomeResults == ResultsToPrint.none) {
+        // do nothing
+      } else if (printSomeResults == ResultsToPrint.oneAtStart && i == 0) {
+        print(outStr);
+      } else if (printSomeResults == ResultsToPrint.someAtStartAndEnd &&
+          (i < printSomeNumberOfLinesAtStartAndEnd ||
+              i >= (iterations - printSomeNumberOfLinesAtStartAndEnd))) {
+        print(outStr);
+      }
+    }
+    stopwatchPlain.stop();
+
+    print(
+      'QuectoPlain (zero ESC scanning, known-plain input) performance test:'
+          .blue,
+    );
+    print('Iterations: $iterations');
+    print('Total time: ${stopwatchPlain.elapsedMilliseconds} ms');
+    print(
+      'Average time per iteration: ${stopwatchPlain.elapsedMilliseconds / iterations} ms',
+    );
+    timeQuectoPlain = stopwatchPlain.elapsedMilliseconds / iterations;
+
+    double percentPlainDiv1 =
+        stopwatchPlain.elapsedMilliseconds / stopwatch1.elapsedMilliseconds;
+    double percent1DivPlain =
+        stopwatch1.elapsedMilliseconds / stopwatchPlain.elapsedMilliseconds;
+
+    print(
+      'PERCENT diff    QuectoPlain/QuectoColors = ${(percentPlainDiv1 * 100.0).toStringAsFixed(2)}%  (<100% means faster)  QuectoColors/QuectoPlain =${(percent1DivPlain * 100.0).toStringAsFixed(2)}%'
+          .blueBright,
+    );
+
+    nameFormatted = AsciiChart.namePaddedToLength('QuectoPlain', 20);
+    chartLineAlgorithmName.add(nameFormatted);
+    percentList.add(percentPlainDiv1 * 100.0);
+    timePerIterationList.add(timeQuectoPlain);
+    stylerList.add(QuectoColors.whiteBright);
+    noteList.add('');
+  }
 
   print('-----------------------------------------------\n'.magentaBright);
   //Test the built in substring method for comparison.
@@ -322,6 +391,11 @@ void runTests(TestLevels testMode, int consoleWidth) {
   percentList.add(percent_2div1 * 100.0);
   timePerIterationList.add(timeAnsiOrig);
   stylerList.add(QuectoColors.greenBright);
+  noteList.add(
+    (testMode == TestLevels.complex || testMode == TestLevels.largerandom_complex)
+        ? ' (WRONG! no nesting support)'
+        : '',
+  );
 
   print('-----------------------------------------------\n'.magentaBright);
   //Test the string extensions version
@@ -402,6 +476,7 @@ void runTests(TestLevels testMode, int consoleWidth) {
   percentList.add(percent_3div1 * 100.0);
   timePerIterationList.add(timeQuectoStrings);
   stylerList.add(QuectoColors.yellow);
+  noteList.add('');
 
   print(
     '\n-----Our AnsiPen compatible version------------------------------------------\n'
@@ -497,6 +572,7 @@ void runTests(TestLevels testMode, int consoleWidth) {
   percentList.add(percent_4div1 * 100.0);
   timePerIterationList.add(timeQuectoAni);
   stylerList.add(QuectoColors.red);
+  noteList.add('');
 
   print(
     '\n-----ChalkDart version------------------------------------------\n'
@@ -589,6 +665,7 @@ void runTests(TestLevels testMode, int consoleWidth) {
   percentList.add(percent_5div1 * 100.0);
   timePerIterationList.add(timeChalkDart);
   stylerList.add(QuectoColors.blueBright);
+  noteList.add('');
 
   double findMax(List<double> numbers) =>
       numbers.reduce((a, b) => a > b ? a : b);
@@ -617,6 +694,7 @@ void runTests(TestLevels testMode, int consoleWidth) {
       roomForChart.toDouble(); //  100 block wide chart should fit largest time
   for (int i = 0; i < timePerIterationList.length; i++) {
     String name = chartLineAlgorithmName[i];
+    String note = noteList[i];
     timePerIterationChart.add(
       stylerList[i](
         name +
@@ -624,7 +702,8 @@ void runTests(TestLevels testMode, int consoleWidth) {
               (timePerIterationList[i] * 1000000.0),
               unitsPerBlock,
               'ns',
-            ),
+            ) +
+            note,
       ),
     ); // convert milliseconds to nanoseconds
   }
@@ -640,9 +719,10 @@ void runTests(TestLevels testMode, int consoleWidth) {
       roomForChart.toDouble(); //  100 block wide chart should fit largest time
   for (int i = 0; i < percentList.length; i++) {
     String name = chartLineAlgorithmName[i];
+    String note = noteList[i];
     percentChart.add(
       stylerList[i](
-        name + AsciiChart.getPercentLine(percentList[i], percentsPerBlock),
+        name + AsciiChart.getPercentLine(percentList[i], percentsPerBlock) + note,
       ),
     );
     //AsciiChart.getPercent(100,percent_0div1)

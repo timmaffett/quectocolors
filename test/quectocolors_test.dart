@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 
-import 'package:quectocolors/quectocolors_css.dart';
+import 'package:quectocolors/quectocolors.dart';
 import 'package:quectocolors/ansipen.dart';
 
 void main() {
@@ -616,6 +616,308 @@ void main() {
     test('CSS bg + basic fg chaining', () {
       final result = 'Hello'.onCornflowerBlue;
       expect(result, '\x1B[48;2;100;149;237mHello\x1B[49m');
+    });
+  });
+
+  group('New core stylers (blink, rapidBlink, superscript, subscript)', () {
+    test('QuectoColors.blink wraps with correct codes', () {
+      expect(QuectoColors.blink('Hi'), '\x1B[5mHi\x1B[25m');
+    });
+
+    test('QuectoColors.rapidBlink wraps with correct codes', () {
+      expect(QuectoColors.rapidBlink('Hi'), '\x1B[6mHi\x1B[25m');
+    });
+
+    test('QuectoColors.superscript wraps with correct codes', () {
+      expect(QuectoColors.superscript('Hi'), '\x1B[73mHi\x1B[75m');
+    });
+
+    test('QuectoColors.subscript wraps with correct codes', () {
+      expect(QuectoColors.subscript('Hi'), '\x1B[74mHi\x1B[75m');
+    });
+
+    test('QuectoPlain.blink wraps with correct codes', () {
+      expect(QuectoPlain.blink('Hi'), '\x1B[5mHi\x1B[25m');
+    });
+
+    test('QuectoPlain.rapidBlink wraps with correct codes', () {
+      expect(QuectoPlain.rapidBlink('Hi'), '\x1B[6mHi\x1B[25m');
+    });
+
+    test('QuectoPlain.superscript wraps with correct codes', () {
+      expect(QuectoPlain.superscript('Hi'), '\x1B[73mHi\x1B[75m');
+    });
+
+    test('QuectoPlain.subscript wraps with correct codes', () {
+      expect(QuectoPlain.subscript('Hi'), '\x1B[74mHi\x1B[75m');
+    });
+  });
+
+  group('on* aliases for bg* colors', () {
+    test('QuectoColors on* aliases match bg* stylers', () {
+      expect(QuectoColors.onBlack('Hi'), QuectoColors.bgBlack('Hi'));
+      expect(QuectoColors.onRed('Hi'), QuectoColors.bgRed('Hi'));
+      expect(QuectoColors.onGreen('Hi'), QuectoColors.bgGreen('Hi'));
+      expect(QuectoColors.onYellow('Hi'), QuectoColors.bgYellow('Hi'));
+      expect(QuectoColors.onBlue('Hi'), QuectoColors.bgBlue('Hi'));
+      expect(QuectoColors.onMagenta('Hi'), QuectoColors.bgMagenta('Hi'));
+      expect(QuectoColors.onCyan('Hi'), QuectoColors.bgCyan('Hi'));
+      expect(QuectoColors.onWhite('Hi'), QuectoColors.bgWhite('Hi'));
+      expect(QuectoColors.onGray('Hi'), QuectoColors.bgGray('Hi'));
+      expect(QuectoColors.onGrey('Hi'), QuectoColors.bgGrey('Hi'));
+    });
+
+    test('QuectoColors on*Bright aliases match bg*Bright stylers', () {
+      expect(QuectoColors.onRedBright('Hi'), QuectoColors.bgRedBright('Hi'));
+      expect(
+          QuectoColors.onGreenBright('Hi'), QuectoColors.bgGreenBright('Hi'));
+      expect(QuectoColors.onYellowBright('Hi'),
+          QuectoColors.bgYellowBright('Hi'));
+      expect(QuectoColors.onBlueBright('Hi'), QuectoColors.bgBlueBright('Hi'));
+      expect(QuectoColors.onMagentaBright('Hi'),
+          QuectoColors.bgMagentaBright('Hi'));
+      expect(QuectoColors.onCyanBright('Hi'), QuectoColors.bgCyanBright('Hi'));
+      expect(
+          QuectoColors.onWhiteBright('Hi'), QuectoColors.bgWhiteBright('Hi'));
+    });
+
+    test('QuectoColors.onAnsi256 matches bgAnsi256', () {
+      expect(QuectoColors.onAnsi256(196)('Hi'),
+          QuectoColors.bgAnsi256(196)('Hi'));
+    });
+
+    test('QuectoColors.onRgb matches bgRgb', () {
+      expect(QuectoColors.onRgb(1, 2, 3)('Hi'),
+          QuectoColors.bgRgb(1, 2, 3)('Hi'));
+    });
+
+    test('QuectoPlain on* aliases match bg* stylers', () {
+      expect(QuectoPlain.onBlack('Hi'), QuectoPlain.bgBlack('Hi'));
+      expect(QuectoPlain.onRed('Hi'), QuectoPlain.bgRed('Hi'));
+      expect(QuectoPlain.onGreen('Hi'), QuectoPlain.bgGreen('Hi'));
+      expect(QuectoPlain.onYellow('Hi'), QuectoPlain.bgYellow('Hi'));
+      expect(QuectoPlain.onBlue('Hi'), QuectoPlain.bgBlue('Hi'));
+      expect(QuectoPlain.onMagenta('Hi'), QuectoPlain.bgMagenta('Hi'));
+      expect(QuectoPlain.onCyan('Hi'), QuectoPlain.bgCyan('Hi'));
+      expect(QuectoPlain.onWhite('Hi'), QuectoPlain.bgWhite('Hi'));
+      expect(QuectoPlain.onGray('Hi'), QuectoPlain.bgGray('Hi'));
+      expect(QuectoPlain.onGrey('Hi'), QuectoPlain.bgGrey('Hi'));
+    });
+
+    test('String extension on* aliases match bg*', () {
+      expect('Hi'.onBlack, 'Hi'.bgBlack);
+      expect('Hi'.onRed, 'Hi'.bgRed);
+      expect('Hi'.onGreen, 'Hi'.bgGreen);
+      expect('Hi'.onYellow, 'Hi'.bgYellow);
+      expect('Hi'.onBlue, 'Hi'.bgBlue);
+      expect('Hi'.onMagenta, 'Hi'.bgMagenta);
+      expect('Hi'.onCyan, 'Hi'.bgCyan);
+      expect('Hi'.onWhite, 'Hi'.bgWhite);
+      expect('Hi'.onGray, 'Hi'.bgGray);
+      expect('Hi'.onGrey, 'Hi'.bgGrey);
+    });
+
+    test('String extension on*Bright aliases match bg*Bright', () {
+      expect('Hi'.onRedBright, 'Hi'.bgRedBright);
+      expect('Hi'.onGreenBright, 'Hi'.bgGreenBright);
+      expect('Hi'.onYellowBright, 'Hi'.bgYellowBright);
+      expect('Hi'.onBlueBright, 'Hi'.bgBlueBright);
+      expect('Hi'.onMagentaBright, 'Hi'.bgMagentaBright);
+      expect('Hi'.onCyanBright, 'Hi'.bgCyanBright);
+      expect('Hi'.onWhiteBright, 'Hi'.bgWhiteBright);
+    });
+
+    test('String extension onAnsi256 and onRgb match bg versions', () {
+      expect('Hi'.onAnsi256(196), 'Hi'.bgAnsi256(196));
+      expect('Hi'.onRgb(1, 2, 3), 'Hi'.bgRgb(1, 2, 3));
+    });
+  });
+
+  group('Extras: style aliases', () {
+    test('normal matches reset', () {
+      expect('Hi'.normal, 'Hi'.reset);
+    });
+
+    test('underlined matches underline', () {
+      expect('Hi'.underlined, 'Hi'.underline);
+    });
+
+    test('overlined matches overline', () {
+      expect('Hi'.overlined, 'Hi'.overline);
+    });
+
+    test('invert matches inverse', () {
+      expect('Hi'.invert, 'Hi'.inverse);
+    });
+  });
+
+  group('Extras: new style string extensions', () {
+    test('blink string extension', () {
+      expect('Hi'.blink, '\x1B[5mHi\x1B[25m');
+    });
+
+    test('rapidBlink string extension', () {
+      expect('Hi'.rapidBlink, '\x1B[6mHi\x1B[25m');
+    });
+
+    test('superscript string extension', () {
+      expect('Hi'.superscript, '\x1B[73mHi\x1B[75m');
+    });
+
+    test('subscript string extension', () {
+      expect('Hi'.subscript, '\x1B[74mHi\x1B[75m');
+    });
+
+    test('visible returns string when colors enabled', () {
+      final wasDisabled = ansiColorDisabled;
+      try {
+        ansiColorDisabled = false;
+        expect('Hi'.visible, 'Hi');
+      } finally {
+        ansiColorDisabled = wasDisabled;
+      }
+    });
+
+    test('visible returns empty string when colors disabled', () {
+      final wasDisabled = ansiColorDisabled;
+      try {
+        ansiColorDisabled = true;
+        expect('Hi'.visible, '');
+      } finally {
+        ansiColorDisabled = wasDisabled;
+      }
+    });
+  });
+
+  group('Extras: brightXYZ aliases', () {
+    test('foreground brightXYZ aliases match xyzBright', () {
+      expect('Hi'.brightRed, 'Hi'.redBright);
+      expect('Hi'.brightGreen, 'Hi'.greenBright);
+      expect('Hi'.brightYellow, 'Hi'.yellowBright);
+      expect('Hi'.brightBlue, 'Hi'.blueBright);
+      expect('Hi'.brightMagenta, 'Hi'.magentaBright);
+      expect('Hi'.brightCyan, 'Hi'.cyanBright);
+      expect('Hi'.brightWhite, 'Hi'.whiteBright);
+    });
+
+    test('brightBlack matches gray', () {
+      expect('Hi'.brightBlack, 'Hi'.gray);
+    });
+
+    test('bg brightXYZ aliases match bgXyzBright', () {
+      expect('Hi'.bgBrightRed, 'Hi'.bgRedBright);
+      expect('Hi'.bgBrightGreen, 'Hi'.bgGreenBright);
+      expect('Hi'.bgBrightYellow, 'Hi'.bgYellowBright);
+      expect('Hi'.bgBrightBlue, 'Hi'.bgBlueBright);
+      expect('Hi'.bgBrightMagenta, 'Hi'.bgMagentaBright);
+      expect('Hi'.bgBrightCyan, 'Hi'.bgCyanBright);
+      expect('Hi'.bgBrightWhite, 'Hi'.bgWhiteBright);
+    });
+
+    test('bgBrightBlack matches bgGray', () {
+      expect('Hi'.bgBrightBlack, 'Hi'.bgGray);
+    });
+
+    test('on brightXYZ aliases match onXyzBright', () {
+      expect('Hi'.onBrightRed, 'Hi'.onRedBright);
+      expect('Hi'.onBrightGreen, 'Hi'.onGreenBright);
+      expect('Hi'.onBrightYellow, 'Hi'.onYellowBright);
+      expect('Hi'.onBrightBlue, 'Hi'.onBlueBright);
+      expect('Hi'.onBrightMagenta, 'Hi'.onMagentaBright);
+      expect('Hi'.onBrightCyan, 'Hi'.onCyanBright);
+      expect('Hi'.onBrightWhite, 'Hi'.onWhiteBright);
+    });
+
+    test('onBrightBlack matches onGray', () {
+      expect('Hi'.onBrightBlack, 'Hi'.onGray);
+    });
+  });
+
+  group('Extras: hex color methods', () {
+    test('hex with # prefix', () {
+      expect('Hi'.hex('#FF0000'), '\x1B[38;2;255;0;0mHi\x1B[39m');
+    });
+
+    test('hex without # prefix', () {
+      expect('Hi'.hex('FF0000'), '\x1B[38;2;255;0;0mHi\x1B[39m');
+    });
+
+    test('hex with 3-char shorthand', () {
+      expect('Hi'.hex('#F00'), '\x1B[38;2;255;0;0mHi\x1B[39m');
+    });
+
+    test('hex with int value', () {
+      expect('Hi'.hex(0xFF0000), '\x1B[38;2;255;0;0mHi\x1B[39m');
+    });
+
+    test('onHex sets background color', () {
+      expect('Hi'.onHex('#00FF00'), '\x1B[48;2;0;255;0mHi\x1B[49m');
+    });
+
+    test('bgHex is alias for onHex', () {
+      expect('Hi'.bgHex('#0000FF'), 'Hi'.onHex('#0000FF'));
+    });
+
+    test('hex with mixed case', () {
+      expect('Hi'.hex('ff8800'), 'Hi'.hex('FF8800'));
+    });
+  });
+
+  group('Extras: ANSI stripping utilities', () {
+    test('stripAnsi removes escape codes', () {
+      final styled = 'Hello'.red;
+      expect(styled.stripAnsi, 'Hello');
+    });
+
+    test('stripAnsi on plain string is identity', () {
+      expect('Hello'.stripAnsi, 'Hello');
+    });
+
+    test('stripAnsi with multiple styles', () {
+      final styled = 'Hello'.red.bold;
+      expect(styled.stripAnsi, 'Hello');
+    });
+
+    test('stripAnsi with nested colors', () {
+      final styled = QuectoColors.red('a${QuectoColors.blue("b")}c');
+      expect(styled.stripAnsi, 'abc');
+    });
+
+    test('ansiLength on plain string is 0', () {
+      expect('Hello'.ansiLength, 0);
+    });
+
+    test('ansiLength counts escape code bytes', () {
+      final styled = 'Hi'.red;
+      // \x1B[31m = 5 chars, \x1B[39m = 5 chars => 10
+      expect(styled.ansiLength, 10);
+    });
+
+    test('ansiLength with multiple styles', () {
+      final styled = 'Hi'.red.bold;
+      // red: \x1B[31m (5) + \x1B[39m (5) = 10
+      // bold: \x1B[1m (4) + \x1B[22m (5) = 9
+      expect(styled.ansiLength, 19);
+    });
+
+    test('lengthWithoutAnsi on plain string equals length', () {
+      expect('Hello'.lengthWithoutAnsi, 5);
+    });
+
+    test('lengthWithoutAnsi excludes escape codes', () {
+      final styled = 'Hello'.red;
+      expect(styled.lengthWithoutAnsi, 5);
+    });
+
+    test('lengthWithoutAnsi equals length minus ansiLength', () {
+      final styled = 'Hello'.red.bold.bgBlue;
+      expect(styled.lengthWithoutAnsi, styled.length - styled.ansiLength);
+    });
+
+    test('empty string utilities', () {
+      expect(''.stripAnsi, '');
+      expect(''.ansiLength, 0);
+      expect(''.lengthWithoutAnsi, 0);
     });
   });
 }

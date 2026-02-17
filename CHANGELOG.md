@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.0.2
+- Rounded out compatibility with ChalkDart:
+- Added `blink` (SGR 5), `rapidBlink` (SGR 6), `superscript` (SGR 73), and
+  `subscript` (SGR 74) to `QuectoPlain`, `QuectoColors`, and the string
+  extensions.
+- Added `on*` aliases for all `bg*` background colors on `QuectoPlain`,
+  `QuectoColors`, and the string extensions: `onBlack`, `onRed`, `onGreen`,
+  `onYellow`, `onBlue`, `onMagenta`, `onCyan`, `onWhite`, `onGray`/`onGrey`,
+  and all bright variants.
+- Added `onAnsi256()` and `onRgb()` method aliases.
+- **Style aliases:** `normal` (reset), `underlined` (underline), `overlined`
+  (overline), `invert` (inverse).
+- **`brightXYZ` foreground aliases:** `brightRed`, `brightGreen`,
+  `brightYellow`, `brightBlue`, `brightMagenta`, `brightCyan`, `brightWhite`,
+  `brightBlack`.
+- **`brightXYZ` background aliases:** `bgBrightRed`..`bgBrightBlack` and
+  `onBrightRed`..`onBrightBlack`.
+- **`visible`:** returns the string when ANSI is enabled, empty string when
+  disabled.
+- **Hex color methods:** `hex()`, `onHex()`, `bgHex()` — set foreground or
+  background from hex values (`'#FF0000'`, `'FF0000'`, `'#F00'`, `0xFF0000`).
+- **ANSI string extensions utilities:** `stripAnsi`, `ansiLength`,
+  `lengthWithoutAnsi`.
+
 ## 1.0.1
 - Explain quecto and fix import version in README.md
 
@@ -79,8 +103,8 @@ styling library for Dart with correct nested color support.
 ### Package Structure
 
 - Three import entry points:
-  - `quectocolors.dart` — core colors, styles, and string extensions.
+  - `quectocolors.dart` — everything: core colors, styles, extras, and 149 CSS/X11 named colors.
+  - `small.dart` — core only (QuectoColors, QuectoPlain, basic string extensions).
   - `ansipen.dart` — AnsiPen compatibility layer (import separately).
-  - `quectocolors_css.dart` — core + 149 CSS/X11 named color extensions.
 - Pure Dart package, no Flutter dependency.
 - Inline SVG doc comments on all color fields for IDE color preview swatches.
