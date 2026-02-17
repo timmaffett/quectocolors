@@ -30,7 +30,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  quectocolors: ^1.0.2
+  quectocolors: ^1.0.3
 ```
 
 ## Imports

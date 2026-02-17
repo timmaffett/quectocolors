@@ -1,6 +1,14 @@
 # Changelog
 
+## 1.0.3
+
+- Added `blinking` and `rapidBlinking` aliases for `blink` and `rapidBlink`.
+
 ## 1.0.2
+- Simplified import structure to three entry points: `quectocolors.dart`
+  (everything), `small.dart` (core only), and `ansipen.dart` (AnsiPen compat).
+  Removed redundant `basic.dart`, `extras.dart`, and `css.dart` — Dart's
+  tree-shaker strips unused code, so the full import has no binary size penalty.
 - Rounded out compatibility with ChalkDart:
 - Added `blink` (SGR 5), `rapidBlink` (SGR 6), `superscript` (SGR 73), and
   `subscript` (SGR 74) to `QuectoPlain`, `QuectoColors`, and the string

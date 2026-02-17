@@ -47,8 +47,14 @@ extension QuectoExtrasOnStrings on String {
   /// Slow blink (SGR 5).
   String get blink => QuectoColors.blink(this);
 
+  /// Alias for [blink].
+  String get blinking => QuectoColors.blink(this);
+
   /// Rapid blink (SGR 6). Not widely supported.
   String get rapidBlink => QuectoColors.rapidBlink(this);
+
+  /// Alias for [rapidBlink].
+  String get rapidBlinking => QuectoColors.rapidBlink(this);
 
   /// Superscript (SGR 73). Not widely supported.
   String get superscript => QuectoColors.superscript(this);
