@@ -17,6 +17,7 @@ import 'package:test/test.dart';
 void main() {
   setUp(() {
     ansiColorDisabled = false;
+    ansiColorLevel = AnsiColorLevel.trueColor;
   });
 
   tearDown(() {

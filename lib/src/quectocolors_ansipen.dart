@@ -1,11 +1,30 @@
 import 'package:quectocolors/src/quectocolors.dart';
 import 'package:quectocolors/supports_ansi_color.dart';
 
+/// A fluent pen-style API for building ANSI-styled strings.
+///
+/// Drop-in replacement for the `ansicolor` package's `AnsiPen`, with
+/// additional styles (bold, italic, strikethrough, etc.), 16M true color RGB,
+/// and correct nested color handling.
+///
+/// ```dart
+/// final pen = AnsiPen()..red();
+/// print(pen('Hello'));
+///
+/// final fancy = AnsiPen().red().bold.italic;
+/// print(fancy('Fancy text'));
+/// ```
 class AnsiPen {
+  /// Creates a new [AnsiPen] with no styles applied.
+  AnsiPen();
+
+  /// The stack of [QuectoStyler] closures applied by this pen.
   List<QuectoStyler> styleStack = [];
 
-  /// Treat a pen instance as a function such that `pen('msg')` is the same as
-  /// `pen.write('msg')`.
+  /// Applies this pen's styles to [input] and returns the styled string.
+  ///
+  /// When called with no arguments, returns `this` for chaining.
+  /// `pen('msg')` is equivalent to `pen.write('msg')`.
   dynamic call([Object? input]) {
     if (input == null) return this; // getter called without args
     String string = input.toString();
@@ -27,8 +46,10 @@ class AnsiPen {
     }
   }
 
-  // mirror AnsiPen write() method as alternative to call()
-  dynamic write(Object? input) => call(input);
+  /// Applies this pen's styles to [input] and returns the styled string.
+  ///
+  /// Equivalent to [call]. Compatible with `ansicolor`'s `pen.write()`.
+  String write(Object input) => call(input) as String;
 
   /// Returns the ANSI escape codes that open the pen's current styles.
   /// Compatible with ansicolor's `pen.down` / `'${pen}'` usage.
@@ -53,11 +74,13 @@ class AnsiPen {
   @override
   String toString() => down;
 
+  /// Adds a reset style (SGR 0) to the pen.
   AnsiPen get reset {
     styleStack.add(QuectoColors.reset);
     return this;
   }
 
+  /// Sets black foreground (or background with `bg: true`, bright with `bold: true`).
   AnsiPen black({bool bg = false, bool bold = false}) {
     switch ((bg, bold)) {
       case (true, true):
@@ -76,6 +99,7 @@ class AnsiPen {
     return this;
   }
 
+  /// Sets red foreground (or background with `bg: true`, bright with `bold: true`).
   AnsiPen red({bool bg = false, bool bold = false}) {
     switch ((bg, bold)) {
       case (true, true):
@@ -94,6 +118,7 @@ class AnsiPen {
     return this;
   }
 
+  /// Sets green foreground (or background with `bg: true`, bright with `bold: true`).
   AnsiPen green({bool bg = false, bool bold = false}) {
     switch ((bg, bold)) {
       case (true, true):
@@ -112,6 +137,7 @@ class AnsiPen {
     return this;
   }
 
+  /// Sets yellow foreground (or background with `bg: true`, bright with `bold: true`).
   AnsiPen yellow({bool bg = false, bool bold = false}) {
     switch ((bg, bold)) {
       case (true, true):
@@ -130,6 +156,7 @@ class AnsiPen {
     return this;
   }
 
+  /// Sets blue foreground (or background with `bg: true`, bright with `bold: true`).
   AnsiPen blue({bool bg = false, bool bold = false}) {
     switch ((bg, bold)) {
       case (true, true):
@@ -148,6 +175,7 @@ class AnsiPen {
     return this;
   }
 
+  /// Sets magenta foreground (or background with `bg: true`, bright with `bold: true`).
   AnsiPen magenta({bool bg = false, bool bold = false}) {
     switch ((bg, bold)) {
       case (true, true):
@@ -166,6 +194,7 @@ class AnsiPen {
     return this;
   }
 
+  /// Sets cyan foreground (or background with `bg: true`, bright with `bold: true`).
   AnsiPen cyan({bool bg = false, bool bold = false}) {
     switch ((bg, bold)) {
       case (true, true):
@@ -184,6 +213,7 @@ class AnsiPen {
     return this;
   }
 
+  /// Sets white foreground (or background with `bg: true`, bright with `bold: true`).
   AnsiPen white({bool bg = false, bool bold = false}) {
     switch ((bg, bold)) {
       case (true, true):
@@ -209,11 +239,14 @@ class AnsiPen {
   /// Compatible with ansicolor's AnsiPen.rgb() signature.
   /// Maps to xterm 256-color palette (same as ansicolor).
   AnsiPen rgb({num r = 1.0, num g = 1.0, num b = 1.0, bool bg = false}) {
-    final int code = (r.clamp(0.0, 1.0) * 5).toInt() * 36 +
+    final int code =
+        (r.clamp(0.0, 1.0) * 5).toInt() * 36 +
         (g.clamp(0.0, 1.0) * 5).toInt() * 6 +
         (b.clamp(0.0, 1.0) * 5).toInt() +
         16;
-    styleStack.add(bg ? QuectoColors.bgAnsi256(code) : QuectoColors.ansi256(code));
+    styleStack.add(
+      bg ? QuectoColors.bgAnsi256(code) : QuectoColors.ansi256(code),
+    );
     return this;
   }
 
@@ -223,49 +256,63 @@ class AnsiPen {
   /// Directly index the xterm 256 color palette.
   /// Compatible with ansicolor's AnsiPen.xterm() signature.
   AnsiPen xterm(int color, {bool bg = false}) {
-    final int code = color < 0 ? 0 : color > 255 ? 255 : color;
-    styleStack.add(bg ? QuectoColors.bgAnsi256(code) : QuectoColors.ansi256(code));
+    final int code = color < 0
+        ? 0
+        : color > 255
+        ? 255
+        : color;
+    styleStack.add(
+      bg ? QuectoColors.bgAnsi256(code) : QuectoColors.ansi256(code),
+    );
     return this;
   }
 
   //--------------------------------------------------------------------------
   // These methods match the QuectoColors color methods
 
+  /// Adds bold style (SGR 1).
   AnsiPen get bold {
     styleStack.add(QuectoColors.bold);
     return this;
   }
 
+  /// Adds dim/faint style (SGR 2).
   AnsiPen get dim {
     styleStack.add(QuectoColors.dim);
     return this;
   }
 
+  /// Adds italic style (SGR 3).
   AnsiPen get italic {
     styleStack.add(QuectoColors.italic);
     return this;
   }
 
+  /// Adds underline style (SGR 4).
   AnsiPen get underline {
     styleStack.add(QuectoColors.underline);
     return this;
   }
 
+  /// Adds overline style (SGR 53).
   AnsiPen get overline {
     styleStack.add(QuectoColors.overline);
     return this;
   }
 
+  /// Adds inverse/reverse video style (SGR 7).
   AnsiPen get inverse {
     styleStack.add(QuectoColors.inverse);
     return this;
   }
 
+  /// Adds hidden/conceal style (SGR 8).
   AnsiPen get hidden {
     styleStack.add(QuectoColors.hidden);
     return this;
   }
 
+  /// Adds strikethrough style (SGR 9).
   AnsiPen get strikethrough {
     styleStack.add(QuectoColors.strikethrough);
     return this;
@@ -278,7 +325,8 @@ class AnsiPen {
     if (level != null) {
       final int code = 232 + (level.clamp(0.0, 1.0) * 23).round();
       styleStack.add(
-          bg ? QuectoColors.bgAnsi256(code) : QuectoColors.ansi256(code));
+        bg ? QuectoColors.bgAnsi256(code) : QuectoColors.ansi256(code),
+      );
     } else if (bg) {
       styleStack.add(QuectoColors.bgGray);
     } else {
@@ -288,151 +336,181 @@ class AnsiPen {
   }
 
   /// Alternate spelling for [gray].
-  AnsiPen grey({num? level, bool bg = false}) =>
-      gray(level: level, bg: bg);
+  AnsiPen grey({num? level, bool bg = false}) => gray(level: level, bg: bg);
 
+  /// Sets background color to black.
   AnsiPen get bgBlack {
     styleStack.add(QuectoColors.bgBlack);
     return this;
   }
 
+  /// Sets background color to red.
   AnsiPen get bgRed {
     styleStack.add(QuectoColors.bgRed);
     return this;
   }
 
+  /// Sets background color to green.
   AnsiPen get bgGreen {
     styleStack.add(QuectoColors.bgGreen);
     return this;
   }
 
+  /// Sets background color to yellow.
   AnsiPen get bgYellow {
     styleStack.add(QuectoColors.bgYellow);
     return this;
   }
 
+  /// Sets background color to blue.
   AnsiPen get bgBlue {
     styleStack.add(QuectoColors.bgBlue);
     return this;
   }
 
+  /// Sets background color to magenta.
   AnsiPen get bgMagenta {
     styleStack.add(QuectoColors.bgMagenta);
     return this;
   }
 
+  /// Sets background color to cyan.
   AnsiPen get bgCyan {
     styleStack.add(QuectoColors.bgCyan);
     return this;
   }
 
+  /// Sets background color to white.
   AnsiPen get bgWhite {
     styleStack.add(QuectoColors.bgWhite);
     return this;
   }
 
+  /// Sets background color to gray (bright black).
   AnsiPen get bgGray {
     styleStack.add(QuectoColors.bgGray);
     return this;
   }
 
+  /// Sets foreground color to bright red.
   AnsiPen get redBright {
     styleStack.add(QuectoColors.redBright);
     return this;
   }
 
+  /// Sets foreground color to bright green.
   AnsiPen get greenBright {
     styleStack.add(QuectoColors.greenBright);
     return this;
   }
 
+  /// Sets foreground color to bright yellow.
   AnsiPen get yellowBright {
     styleStack.add(QuectoColors.yellowBright);
     return this;
   }
 
+  /// Sets foreground color to bright blue.
   AnsiPen get blueBright {
     styleStack.add(QuectoColors.blueBright);
     return this;
   }
 
+  /// Sets foreground color to bright magenta.
   AnsiPen get magentaBright {
     styleStack.add(QuectoColors.magentaBright);
     return this;
   }
 
+  /// Sets foreground color to bright cyan.
   AnsiPen get cyanBright {
     styleStack.add(QuectoColors.cyanBright);
     return this;
   }
 
+  /// Sets foreground color to bright white.
   AnsiPen get whiteBright {
     styleStack.add(QuectoColors.whiteBright);
     return this;
   }
 
+  /// Sets background color to bright red.
   AnsiPen get bgRedBright {
     styleStack.add(QuectoColors.bgRedBright);
     return this;
   }
 
+  /// Sets background color to bright green.
   AnsiPen get bgGreenBright {
     styleStack.add(QuectoColors.bgGreenBright);
     return this;
   }
 
+  /// Sets background color to bright yellow.
   AnsiPen get bgYellowBright {
     styleStack.add(QuectoColors.bgYellowBright);
     return this;
   }
 
+  /// Sets background color to bright blue.
   AnsiPen get bgBlueBright {
     styleStack.add(QuectoColors.bgBlueBright);
     return this;
   }
 
+  /// Sets background color to bright magenta.
   AnsiPen get bgMagentaBright {
     styleStack.add(QuectoColors.bgMagentaBright);
     return this;
   }
 
+  /// Sets background color to bright cyan.
   AnsiPen get bgCyanBright {
     styleStack.add(QuectoColors.bgCyanBright);
     return this;
   }
 
+  /// Sets background color to bright white.
   AnsiPen get bgWhiteBright {
     styleStack.add(QuectoColors.bgWhiteBright);
     return this;
   }
 
   // --- 256-color xterm palette ---
+
+  /// Sets foreground to xterm 256-color palette index [code] (0–255).
   AnsiPen ansi256Fg(int code) {
     styleStack.add(QuectoColors.ansi256(code));
     return this;
   }
 
+  /// Sets background to xterm 256-color palette index [code] (0–255).
   AnsiPen ansi256Bg(int code) {
     styleStack.add(QuectoColors.bgAnsi256(code));
     return this;
   }
 
+  /// Sets underline color to xterm 256-color palette index [code] (0–255).
   AnsiPen underlineAnsi256(int code) {
     styleStack.add(QuectoColors.underlineAnsi256(code));
     return this;
   }
 
   // --- 16M true color (RGB) ---
+
+  /// Sets foreground to 24-bit true color RGB.
   AnsiPen rgbFg(int r, int g, int b) {
     styleStack.add(QuectoColors.rgb(r, g, b));
     return this;
   }
 
+  /// Sets background to 24-bit true color RGB.
   AnsiPen rgbBg(int r, int g, int b) {
     styleStack.add(QuectoColors.bgRgb(r, g, b));
     return this;
   }
 
+  /// Sets underline color to 24-bit true color RGB.
   AnsiPen underlineRgb(int r, int g, int b) {
     styleStack.add(QuectoColors.underlineRgb(r, g, b));
     return this;

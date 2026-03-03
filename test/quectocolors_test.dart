@@ -4,9 +4,11 @@ import 'package:quectocolors/quectocolors.dart';
 import 'package:quectocolors/ansipen.dart';
 
 void main() {
-  // flutter test runs without a terminal, so ansiColorDisabled defaults to true.
-  // Force it off before any static final stylers are lazily initialized.
+  // flutter test runs without a terminal, so ansiColorDisabled defaults to true
+  // and ansiColorLevel may detect 'none'. Force both to ensure tests get real
+  // escape codes before any static final stylers are lazily initialized.
   ansiColorDisabled = false;
+  ansiColorLevel = AnsiColorLevel.trueColor;
 
   // Helper to make escape codes visible in test output
   String esc(String s) => s.replaceAll('\x1B[', 'ESC[');

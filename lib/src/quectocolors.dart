@@ -1,19 +1,184 @@
 import "/supports_ansi_color.dart";
+import 'ansi_color_downgrade.dart';
 
+/// A closure that wraps a string with ANSI escape codes.
+///
+/// All QuectoColors stylers (colors, text styles, etc.) are functions of
+/// this type. When [ansiColorDisabled] is `true` or [ansiColorLevel] is
+/// [AnsiColorLevel.none], stylers return the input string unchanged.
 typedef QuectoStyler = String Function(String);
+
+// --- Level-resolved dispatch (decided once at first access) ---
+
+// QuectoPlain dispatch (zero-scan fast path)
+final _plainRgb = switch (ansiColorLevel) {
+  AnsiColorLevel.basic =>
+    (int r, int g, int b) =>
+        QuectoPlain.createPlainStyler(rgbToBasicAnsiFg(r, g, b), 39),
+  AnsiColorLevel.ansi256 =>
+    (int r, int g, int b) => QuectoPlain.createPlainExtendedStyler(
+      '\x1B[38;5;${QuectoColors.rgbToAnsi256(r, g, b)}m',
+      39,
+    ),
+  _ => (int r, int g, int b) => QuectoPlain.createPlainExtendedStyler(
+    '\x1B[38;2;$r;$g;${b}m',
+    39,
+  ),
+};
+
+final _plainBgRgb = switch (ansiColorLevel) {
+  AnsiColorLevel.basic =>
+    (int r, int g, int b) =>
+        QuectoPlain.createPlainStyler(rgbToBasicAnsiBg(r, g, b), 49),
+  AnsiColorLevel.ansi256 =>
+    (int r, int g, int b) => QuectoPlain.createPlainExtendedStyler(
+      '\x1B[48;5;${QuectoColors.rgbToAnsi256(r, g, b)}m',
+      49,
+    ),
+  _ => (int r, int g, int b) => QuectoPlain.createPlainExtendedStyler(
+    '\x1B[48;2;$r;$g;${b}m',
+    49,
+  ),
+};
+
+final _plainAnsi256 = switch (ansiColorLevel) {
+  AnsiColorLevel.basic => (int code) => QuectoPlain.createPlainStyler(
+    ansi256ToBasicAnsiCode(code, foreground: true),
+    39,
+  ),
+  _ => (int code) => QuectoPlain.createPlainExtendedStyler(
+    '\x1B[38;5;${code}m',
+    39,
+  ),
+};
+
+final _plainBgAnsi256 = switch (ansiColorLevel) {
+  AnsiColorLevel.basic => (int code) => QuectoPlain.createPlainStyler(
+    ansi256ToBasicAnsiCode(code, foreground: false),
+    49,
+  ),
+  _ => (int code) => QuectoPlain.createPlainExtendedStyler(
+    '\x1B[48;5;${code}m',
+    49,
+  ),
+};
+
+final _plainUnderlineRgb = switch (ansiColorLevel) {
+  AnsiColorLevel.basic =>
+    (int r, int g, int b) => QuectoPlain.createPlainStyler(4, 24),
+  AnsiColorLevel.ansi256 =>
+    (int r, int g, int b) => QuectoPlain.createPlainExtendedStyler(
+      '\x1B[58;5;${QuectoColors.rgbToAnsi256(r, g, b)}m',
+      59,
+    ),
+  _ => (int r, int g, int b) => QuectoPlain.createPlainExtendedStyler(
+    '\x1B[58;2;$r;$g;${b}m',
+    59,
+  ),
+};
+
+final _plainUnderlineAnsi256 = switch (ansiColorLevel) {
+  AnsiColorLevel.basic => (int code) => QuectoPlain.createPlainStyler(4, 24),
+  _ => (int code) => QuectoPlain.createPlainExtendedStyler(
+    '\x1B[58;5;${code}m',
+    59,
+  ),
+};
+
+// QuectoColors dispatch (nesting-aware)
+final _colorsRgb = switch (ansiColorLevel) {
+  AnsiColorLevel.basic => (int r, int g, int b) => QuectoColors.createStyler(
+    rgbToBasicAnsiFg(r, g, b),
+    39,
+  ),
+  AnsiColorLevel.ansi256 =>
+    (int r, int g, int b) => QuectoColors.createExtendedStyler(
+      '\x1B[38;5;${QuectoColors.rgbToAnsi256(r, g, b)}m',
+      39,
+    ),
+  _ => (int r, int g, int b) => QuectoColors.createExtendedStyler(
+    '\x1B[38;2;$r;$g;${b}m',
+    39,
+  ),
+};
+
+final _colorsBgRgb = switch (ansiColorLevel) {
+  AnsiColorLevel.basic => (int r, int g, int b) => QuectoColors.createStyler(
+    rgbToBasicAnsiBg(r, g, b),
+    49,
+  ),
+  AnsiColorLevel.ansi256 =>
+    (int r, int g, int b) => QuectoColors.createExtendedStyler(
+      '\x1B[48;5;${QuectoColors.rgbToAnsi256(r, g, b)}m',
+      49,
+    ),
+  _ => (int r, int g, int b) => QuectoColors.createExtendedStyler(
+    '\x1B[48;2;$r;$g;${b}m',
+    49,
+  ),
+};
+
+final _colorsAnsi256 = switch (ansiColorLevel) {
+  AnsiColorLevel.basic => (int code) => QuectoColors.createStyler(
+    ansi256ToBasicAnsiCode(code, foreground: true),
+    39,
+  ),
+  _ => (int code) => QuectoColors.createExtendedStyler(
+    '\x1B[38;5;${code}m',
+    39,
+  ),
+};
+
+final _colorsBgAnsi256 = switch (ansiColorLevel) {
+  AnsiColorLevel.basic => (int code) => QuectoColors.createStyler(
+    ansi256ToBasicAnsiCode(code, foreground: false),
+    49,
+  ),
+  _ => (int code) => QuectoColors.createExtendedStyler(
+    '\x1B[48;5;${code}m',
+    49,
+  ),
+};
+
+final _colorsUnderlineRgb = switch (ansiColorLevel) {
+  AnsiColorLevel.basic => (int r, int g, int b) => QuectoColors.createStyler(
+    4,
+    24,
+  ),
+  AnsiColorLevel.ansi256 =>
+    (int r, int g, int b) => QuectoColors.createExtendedStyler(
+      '\x1B[58;5;${QuectoColors.rgbToAnsi256(r, g, b)}m',
+      59,
+    ),
+  _ => (int r, int g, int b) => QuectoColors.createExtendedStyler(
+    '\x1B[58;2;$r;$g;${b}m',
+    59,
+  ),
+};
+
+final _colorsUnderlineAnsi256 = switch (ansiColorLevel) {
+  AnsiColorLevel.basic => (int code) => QuectoColors.createStyler(4, 24),
+  _ => (int code) => QuectoColors.createExtendedStyler(
+    '\x1B[58;5;${code}m',
+    59,
+  ),
+};
 
 /// Known-plain fast path stylers — ZERO ESC scanning.
 /// Use when the caller guarantees the input string contains no nested
 /// ANSI escape codes (i.e., it's plain text or a literal string).
 /// Access via `QuectoPlain.red('Hello')`.
 final class QuectoPlain {
+  /// Not intended for instantiation — use static members directly.
+  const QuectoPlain._();
+
   /// Creates a plain styler that just wraps the string with open/close codes.
   /// No ESC scanning, no nesting support. Maximum speed for known-plain text.
   static QuectoStyler createPlainStyler(
     final int ansiOpen,
     final int ansiClose,
   ) {
-    if (ansiColorDisabled) {
+    if (ansiColorDisabled || ansiColorLevel == AnsiColorLevel.none) {
       return (String input) => input;
     }
     final String openCode = '\x1B[${ansiOpen}m';
@@ -21,18 +186,43 @@ final class QuectoPlain {
     return (String string) => '$openCode$string$closeCode';
   }
 
+  /// Reset all styles and colors (SGR 0).
   static final QuectoStyler reset = createPlainStyler(0, 0);
+
+  /// Bold / increased intensity (SGR 1).
   static final QuectoStyler bold = createPlainStyler(1, 22);
+
+  /// Dim / decreased intensity (SGR 2).
   static final QuectoStyler dim = createPlainStyler(2, 22);
+
+  /// Italic (SGR 3).
   static final QuectoStyler italic = createPlainStyler(3, 23);
+
+  /// Underline (SGR 4).
   static final QuectoStyler underline = createPlainStyler(4, 24);
+
+  /// Overline (SGR 53).
   static final QuectoStyler overline = createPlainStyler(53, 55);
+
+  /// Reverse video / inverse (SGR 7).
   static final QuectoStyler inverse = createPlainStyler(7, 27);
+
+  /// Hidden / conceal (SGR 8).
   static final QuectoStyler hidden = createPlainStyler(8, 28);
+
+  /// Strikethrough / crossed out (SGR 9).
   static final QuectoStyler strikethrough = createPlainStyler(9, 29);
+
+  /// Slow blink (SGR 5).
   static final QuectoStyler blink = createPlainStyler(5, 25);
+
+  /// Rapid blink (SGR 6). Not widely supported.
   static final QuectoStyler rapidBlink = createPlainStyler(6, 25);
+
+  /// Superscript (SGR 73). Not widely supported.
   static final QuectoStyler superscript = createPlainStyler(73, 75);
+
+  /// Subscript (SGR 74). Not widely supported.
   static final QuectoStyler subscript = createPlainStyler(74, 75);
 
   /// set foreground color to ANSI color black ![black](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Crect%20width='32'%20height='32'%20fill='rgb%280,0,0%29'%20stroke='black'%20stroke-width='2'/%3E%3C/svg%3E|width=32,height=32) (0x000000)/rgb(0, 0, 0)
@@ -97,16 +287,34 @@ final class QuectoPlain {
   /// (alternate spelling for gray)
   static final QuectoStyler bgGrey = createPlainStyler(100, 49);
 
-  // --- on* aliases for bg* background colors (ChalkDart compatibility) ---
+  /// Alias for [bgBlack]. Sets background color to black.
   static final QuectoStyler onBlack = bgBlack;
+
+  /// Alias for [bgRed]. Sets background color to red.
   static final QuectoStyler onRed = bgRed;
+
+  /// Alias for [bgGreen]. Sets background color to green.
   static final QuectoStyler onGreen = bgGreen;
+
+  /// Alias for [bgYellow]. Sets background color to yellow.
   static final QuectoStyler onYellow = bgYellow;
+
+  /// Alias for [bgBlue]. Sets background color to blue.
   static final QuectoStyler onBlue = bgBlue;
+
+  /// Alias for [bgMagenta]. Sets background color to magenta.
   static final QuectoStyler onMagenta = bgMagenta;
+
+  /// Alias for [bgCyan]. Sets background color to cyan.
   static final QuectoStyler onCyan = bgCyan;
+
+  /// Alias for [bgWhite]. Sets background color to white.
   static final QuectoStyler onWhite = bgWhite;
+
+  /// Alias for [bgGray]. Sets background color to gray.
   static final QuectoStyler onGray = bgGray;
+
+  /// Alias for [bgGrey]. Sets background color to grey.
   static final QuectoStyler onGrey = bgGrey;
 
   /// set foreground color to ANSI color brightRed ![brightRed](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Crect%20width='32'%20height='32'%20fill='rgb%28255,0,0%29'%20stroke='black'%20stroke-width='2'/%3E%3C/svg%3E|width=32,height=32) (0xFF0000)/rgb(255, 0, 0)
@@ -151,13 +359,25 @@ final class QuectoPlain {
   /// set background color to ANSI color brightWhite ![brightWhite](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Crect%20width='32'%20height='32'%20fill='rgb%28255,255,255%29'%20stroke='black'%20stroke-width='2'/%3E%3C/svg%3E|width=32,height=32) (0xFFFFFF)/rgb(255, 255, 255)
   static final QuectoStyler bgWhiteBright = createPlainStyler(107, 49);
 
-  // --- on* aliases for bg*Bright background colors (ChalkDart compatibility) ---
+  /// Alias for [bgRedBright]. Sets background to bright red.
   static final QuectoStyler onRedBright = bgRedBright;
+
+  /// Alias for [bgGreenBright]. Sets background to bright green.
   static final QuectoStyler onGreenBright = bgGreenBright;
+
+  /// Alias for [bgYellowBright]. Sets background to bright yellow.
   static final QuectoStyler onYellowBright = bgYellowBright;
+
+  /// Alias for [bgBlueBright]. Sets background to bright blue.
   static final QuectoStyler onBlueBright = bgBlueBright;
+
+  /// Alias for [bgMagentaBright]. Sets background to bright magenta.
   static final QuectoStyler onMagentaBright = bgMagentaBright;
+
+  /// Alias for [bgCyanBright]. Sets background to bright cyan.
   static final QuectoStyler onCyanBright = bgCyanBright;
+
+  /// Alias for [bgWhiteBright]. Sets background to bright white.
   static final QuectoStyler onWhiteBright = bgWhiteBright;
 
   /// Creates a plain styler for extended ANSI codes (256-color, 16M truecolor).
@@ -166,28 +386,42 @@ final class QuectoPlain {
     final String openCode,
     final int ansiClose,
   ) {
-    if (ansiColorDisabled) return (String input) => input;
+    if (ansiColorDisabled || ansiColorLevel == AnsiColorLevel.none) {
+      return (String input) => input;
+    }
     final String closeCode = '\x1B[${ansiClose}m';
     return (String string) => '$openCode$string$closeCode';
   }
 
   // --- 256-color xterm palette (plain fast path) ---
-  static QuectoStyler ansi256(int code) =>
-      createPlainExtendedStyler('\x1B[38;5;${code}m', 39);
-  static QuectoStyler bgAnsi256(int code) =>
-      createPlainExtendedStyler('\x1B[48;5;${code}m', 49);
+
+  /// Sets foreground to xterm 256-color palette index [code] (0–255).
+  static QuectoStyler ansi256(int code) => _plainAnsi256(code);
+
+  /// Sets background to xterm 256-color palette index [code] (0–255).
+  static QuectoStyler bgAnsi256(int code) => _plainBgAnsi256(code);
+
+  /// Alias for [bgAnsi256]. Sets background to xterm 256-color palette index.
   static QuectoStyler onAnsi256(int code) => bgAnsi256(code);
+
+  /// Sets underline color to xterm 256-color palette index [code] (0–255).
   static QuectoStyler underlineAnsi256(int code) =>
-      createPlainExtendedStyler('\x1B[58;5;${code}m', 59);
+      _plainUnderlineAnsi256(code);
 
   // --- 16M true color RGB (plain fast path) ---
-  static QuectoStyler rgb(int r, int g, int b) =>
-      createPlainExtendedStyler('\x1B[38;2;$r;$g;${b}m', 39);
-  static QuectoStyler bgRgb(int r, int g, int b) =>
-      createPlainExtendedStyler('\x1B[48;2;$r;$g;${b}m', 49);
+
+  /// Sets foreground to 24-bit true color RGB.
+  static QuectoStyler rgb(int r, int g, int b) => _plainRgb(r, g, b);
+
+  /// Sets background to 24-bit true color RGB.
+  static QuectoStyler bgRgb(int r, int g, int b) => _plainBgRgb(r, g, b);
+
+  /// Alias for [bgRgb]. Sets background to 24-bit true color RGB.
   static QuectoStyler onRgb(int r, int g, int b) => bgRgb(r, g, b);
+
+  /// Sets underline color to 24-bit true color RGB.
   static QuectoStyler underlineRgb(int r, int g, int b) =>
-      createPlainExtendedStyler('\x1B[58;2;$r;$g;${b}m', 59);
+      _plainUnderlineRgb(r, g, b);
 }
 
 /// Shared core: creates a styler closure from pre-built open/close code strings.
@@ -301,30 +535,70 @@ QuectoStyler _createStylerFromCodes(
   }
 }
 
+/// Nesting-aware ANSI stylers with single-pass ESC byte scanning.
+///
+/// Unlike [QuectoPlain], these stylers detect nested ANSI close codes within
+/// the input and re-inject the parent style's open code after each close,
+/// ensuring correct color nesting.
+///
+/// ```dart
+/// print(QuectoColors.red('Hello ${QuectoColors.blue('world')} !'));
+/// ```
 final class QuectoColors {
+  /// Not intended for instantiation — use static members directly.
+  const QuectoColors._();
+
+  /// Returns [instr] with ESC bytes replaced by the literal text `ESC[`
+  /// for debugging/inspection of ANSI escape sequences.
   static String debugOut(String instr) {
     return instr.replaceAll('\x1B[', 'ESC[');
   }
 
+  /// Creates a nesting-aware styler from SGR open/close code integers.
   static QuectoStyler createStyler(final int ansiOpen, final int ansiClose) {
-    if (ansiColorDisabled) {
+    if (ansiColorDisabled || ansiColorLevel == AnsiColorLevel.none) {
       return (String input) => input;
     }
     return _createStylerFromCodes('\x1B[${ansiOpen}m', '\x1B[${ansiClose}m');
   }
 
+  /// Reset all styles and colors (SGR 0).
   static final QuectoStyler reset = createStyler(0, 0);
+
+  /// Bold / increased intensity (SGR 1).
   static final QuectoStyler bold = createStyler(1, 22);
+
+  /// Dim / decreased intensity (SGR 2).
   static final QuectoStyler dim = createStyler(2, 22);
+
+  /// Italic (SGR 3).
   static final QuectoStyler italic = createStyler(3, 23);
+
+  /// Underline (SGR 4).
   static final QuectoStyler underline = createStyler(4, 24);
+
+  /// Overline (SGR 53).
   static final QuectoStyler overline = createStyler(53, 55);
+
+  /// Reverse video / inverse (SGR 7).
   static final QuectoStyler inverse = createStyler(7, 27);
+
+  /// Hidden / conceal (SGR 8).
   static final QuectoStyler hidden = createStyler(8, 28);
+
+  /// Strikethrough / crossed out (SGR 9).
   static final QuectoStyler strikethrough = createStyler(9, 29);
+
+  /// Slow blink (SGR 5).
   static final QuectoStyler blink = createStyler(5, 25);
+
+  /// Rapid blink (SGR 6). Not widely supported.
   static final QuectoStyler rapidBlink = createStyler(6, 25);
+
+  /// Superscript (SGR 73). Not widely supported.
   static final QuectoStyler superscript = createStyler(73, 75);
+
+  /// Subscript (SGR 74). Not widely supported.
   static final QuectoStyler subscript = createStyler(74, 75);
 
   /// set foreground color to ANSI color black ![black](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Crect%20width='32'%20height='32'%20fill='rgb%280,0,0%29'%20stroke='black'%20stroke-width='2'/%3E%3C/svg%3E|width=32,height=32) (0x000000)/rgb(0, 0, 0)
@@ -389,16 +663,34 @@ final class QuectoColors {
   /// (alternate spelling for gray)
   static final QuectoStyler bgGrey = createStyler(100, 49);
 
-  // --- on* aliases for bg* background colors (ChalkDart compatibility) ---
+  /// Alias for [bgBlack]. Sets background color to black.
   static final QuectoStyler onBlack = bgBlack;
+
+  /// Alias for [bgRed]. Sets background color to red.
   static final QuectoStyler onRed = bgRed;
+
+  /// Alias for [bgGreen]. Sets background color to green.
   static final QuectoStyler onGreen = bgGreen;
+
+  /// Alias for [bgYellow]. Sets background color to yellow.
   static final QuectoStyler onYellow = bgYellow;
+
+  /// Alias for [bgBlue]. Sets background color to blue.
   static final QuectoStyler onBlue = bgBlue;
+
+  /// Alias for [bgMagenta]. Sets background color to magenta.
   static final QuectoStyler onMagenta = bgMagenta;
+
+  /// Alias for [bgCyan]. Sets background color to cyan.
   static final QuectoStyler onCyan = bgCyan;
+
+  /// Alias for [bgWhite]. Sets background color to white.
   static final QuectoStyler onWhite = bgWhite;
+
+  /// Alias for [bgGray]. Sets background color to gray.
   static final QuectoStyler onGray = bgGray;
+
+  /// Alias for [bgGrey]. Sets background color to grey.
   static final QuectoStyler onGrey = bgGrey;
 
   /// set foreground color to ANSI color brightRed ![brightRed](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Crect%20width='32'%20height='32'%20fill='rgb%28255,0,0%29'%20stroke='black'%20stroke-width='2'/%3E%3C/svg%3E|width=32,height=32) (0xFF0000)/rgb(255, 0, 0)
@@ -443,13 +735,25 @@ final class QuectoColors {
   /// set background color to ANSI color brightWhite ![brightWhite](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Crect%20width='32'%20height='32'%20fill='rgb%28255,255,255%29'%20stroke='black'%20stroke-width='2'/%3E%3C/svg%3E|width=32,height=32) (0xFFFFFF)/rgb(255, 255, 255)
   static final QuectoStyler bgWhiteBright = createStyler(107, 49);
 
-  // --- on* aliases for bg*Bright background colors (ChalkDart compatibility) ---
+  /// Alias for [bgRedBright]. Sets background to bright red.
   static final QuectoStyler onRedBright = bgRedBright;
+
+  /// Alias for [bgGreenBright]. Sets background to bright green.
   static final QuectoStyler onGreenBright = bgGreenBright;
+
+  /// Alias for [bgYellowBright]. Sets background to bright yellow.
   static final QuectoStyler onYellowBright = bgYellowBright;
+
+  /// Alias for [bgBlueBright]. Sets background to bright blue.
   static final QuectoStyler onBlueBright = bgBlueBright;
+
+  /// Alias for [bgMagentaBright]. Sets background to bright magenta.
   static final QuectoStyler onMagentaBright = bgMagentaBright;
+
+  /// Alias for [bgCyanBright]. Sets background to bright cyan.
   static final QuectoStyler onCyanBright = bgCyanBright;
+
+  /// Alias for [bgWhiteBright]. Sets background to bright white.
   static final QuectoStyler onWhiteBright = bgWhiteBright;
 
   /// Creates a styler for extended ANSI codes (256-color, 16M truecolor).
@@ -459,7 +763,7 @@ final class QuectoColors {
     final String openCode,
     final int ansiClose,
   ) {
-    if (ansiColorDisabled) {
+    if (ansiColorDisabled || ansiColorLevel == AnsiColorLevel.none) {
       return (String input) => input;
     }
     return _createStylerFromCodes(openCode, '\x1B[${ansiClose}m');
@@ -479,35 +783,65 @@ final class QuectoColors {
   }
 
   // --- 256-color xterm palette ---
-  static QuectoStyler ansi256(int code) =>
-      createExtendedStyler('\x1B[38;5;${code}m', 39);
-  static QuectoStyler bgAnsi256(int code) =>
-      createExtendedStyler('\x1B[48;5;${code}m', 49);
+
+  /// Sets foreground to xterm 256-color palette index [code] (0–255).
+  static QuectoStyler ansi256(int code) => _colorsAnsi256(code);
+
+  /// Sets background to xterm 256-color palette index [code] (0–255).
+  static QuectoStyler bgAnsi256(int code) => _colorsBgAnsi256(code);
+
+  /// Alias for [bgAnsi256]. Sets background to xterm 256-color palette index.
   static QuectoStyler onAnsi256(int code) => bgAnsi256(code);
+
+  /// Sets underline color to xterm 256-color palette index [code] (0–255).
   static QuectoStyler underlineAnsi256(int code) =>
-      createExtendedStyler('\x1B[58;5;${code}m', 59);
+      _colorsUnderlineAnsi256(code);
 
   // --- 16M true color (RGB) ---
-  static QuectoStyler rgb(int r, int g, int b) =>
-      createExtendedStyler('\x1B[38;2;$r;$g;${b}m', 39);
-  static QuectoStyler bgRgb(int r, int g, int b) =>
-      createExtendedStyler('\x1B[48;2;$r;$g;${b}m', 49);
+
+  /// Sets foreground to 24-bit true color RGB.
+  static QuectoStyler rgb(int r, int g, int b) => _colorsRgb(r, g, b);
+
+  /// Sets background to 24-bit true color RGB.
+  static QuectoStyler bgRgb(int r, int g, int b) => _colorsBgRgb(r, g, b);
+
+  /// Alias for [bgRgb]. Sets background to 24-bit true color RGB.
   static QuectoStyler onRgb(int r, int g, int b) => bgRgb(r, g, b);
+
+  /// Sets underline color to 24-bit true color RGB.
   static QuectoStyler underlineRgb(int r, int g, int b) =>
-      createExtendedStyler('\x1B[58;2;$r;$g;${b}m', 59);
+      _colorsUnderlineRgb(r, g, b);
 }
 
 /// String extensions for concise styling: `'text'.red`, `'text'.bold.italic`.
 extension QuectoColorsOnStrings on String {
+  /// Reset all styles and colors (SGR 0).
   String get reset => QuectoColors.reset(this);
+
+  /// Bold / increased intensity (SGR 1).
   String get bold => QuectoColors.bold(this);
+
+  /// Dim / decreased intensity (SGR 2).
   String get dim => QuectoColors.dim(this);
+
+  /// Italic (SGR 3).
   String get italic => QuectoColors.italic(this);
+
+  /// Underline (SGR 4).
   String get underline => QuectoColors.underline(this);
+
+  /// Overline (SGR 53).
   String get overline => QuectoColors.overline(this);
+
+  /// Reverse video / inverse (SGR 7).
   String get inverse => QuectoColors.inverse(this);
+
+  /// Hidden / conceal (SGR 8).
   String get hidden => QuectoColors.hidden(this);
+
+  /// Strikethrough / crossed out (SGR 9).
   String get strikethrough => QuectoColors.strikethrough(this);
+
   /// set foreground color to ANSI color black ![black](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Crect%20width='32'%20height='32'%20fill='rgb%280,0,0%29'%20stroke='black'%20stroke-width='2'/%3E%3C/svg%3E|width=32,height=32) (0x000000)/rgb(0, 0, 0)
   String get black => QuectoColors.black(this);
 
@@ -570,16 +904,34 @@ extension QuectoColorsOnStrings on String {
   /// (alternate spelling for gray)
   String get bgGrey => QuectoColors.bgGrey(this);
 
-  // --- on* aliases for bg* background colors (ChalkDart compatibility) ---
+  /// Alias for [bgBlack]. Sets background color to black.
   String get onBlack => bgBlack;
+
+  /// Alias for [bgRed]. Sets background color to red.
   String get onRed => bgRed;
+
+  /// Alias for [bgGreen]. Sets background color to green.
   String get onGreen => bgGreen;
+
+  /// Alias for [bgYellow]. Sets background color to yellow.
   String get onYellow => bgYellow;
+
+  /// Alias for [bgBlue]. Sets background color to blue.
   String get onBlue => bgBlue;
+
+  /// Alias for [bgMagenta]. Sets background color to magenta.
   String get onMagenta => bgMagenta;
+
+  /// Alias for [bgCyan]. Sets background color to cyan.
   String get onCyan => bgCyan;
+
+  /// Alias for [bgWhite]. Sets background color to white.
   String get onWhite => bgWhite;
+
+  /// Alias for [bgGray]. Sets background color to gray.
   String get onGray => bgGray;
+
+  /// Alias for [bgGrey]. Sets background color to grey.
   String get onGrey => bgGrey;
 
   /// set foreground color to ANSI color brightRed ![brightRed](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Crect%20width='32'%20height='32'%20fill='rgb%28255,0,0%29'%20stroke='black'%20stroke-width='2'/%3E%3C/svg%3E|width=32,height=32) (0xFF0000)/rgb(255, 0, 0)
@@ -624,26 +976,54 @@ extension QuectoColorsOnStrings on String {
   /// set background color to ANSI color brightWhite ![brightWhite](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Crect%20width='32'%20height='32'%20fill='rgb%28255,255,255%29'%20stroke='black'%20stroke-width='2'/%3E%3C/svg%3E|width=32,height=32) (0xFFFFFF)/rgb(255, 255, 255)
   String get bgWhiteBright => QuectoColors.bgWhiteBright(this);
 
-  // --- on* aliases for bg*Bright background colors (ChalkDart compatibility) ---
+  /// Alias for [bgRedBright]. Sets background to bright red.
   String get onRedBright => bgRedBright;
+
+  /// Alias for [bgGreenBright]. Sets background to bright green.
   String get onGreenBright => bgGreenBright;
+
+  /// Alias for [bgYellowBright]. Sets background to bright yellow.
   String get onYellowBright => bgYellowBright;
+
+  /// Alias for [bgBlueBright]. Sets background to bright blue.
   String get onBlueBright => bgBlueBright;
+
+  /// Alias for [bgMagentaBright]. Sets background to bright magenta.
   String get onMagentaBright => bgMagentaBright;
+
+  /// Alias for [bgCyanBright]. Sets background to bright cyan.
   String get onCyanBright => bgCyanBright;
+
+  /// Alias for [bgWhiteBright]. Sets background to bright white.
   String get onWhiteBright => bgWhiteBright;
 
   // --- 256-color xterm palette ---
+
+  /// Sets foreground to xterm 256-color palette index [code] (0–255).
   String ansi256(int code) => QuectoColors.ansi256(code)(this);
+
+  /// Sets background to xterm 256-color palette index [code] (0–255).
   String bgAnsi256(int code) => QuectoColors.bgAnsi256(code)(this);
+
+  /// Alias for [bgAnsi256]. Sets background to xterm 256-color palette index.
   String onAnsi256(int code) => bgAnsi256(code);
+
+  /// Sets underline color to xterm 256-color palette index [code] (0–255).
   String underlineAnsi256(int code) =>
       QuectoColors.underlineAnsi256(code)(this);
 
   // --- 16M true color (RGB) ---
+
+  /// Sets foreground to 24-bit true color RGB.
   String rgb(int r, int g, int b) => QuectoColors.rgb(r, g, b)(this);
+
+  /// Sets background to 24-bit true color RGB.
   String bgRgb(int r, int g, int b) => QuectoColors.bgRgb(r, g, b)(this);
+
+  /// Alias for [bgRgb]. Sets background to 24-bit true color RGB.
   String onRgb(int r, int g, int b) => bgRgb(r, g, b);
+
+  /// Sets underline color to 24-bit true color RGB.
   String underlineRgb(int r, int g, int b) =>
       QuectoColors.underlineRgb(r, g, b)(this);
 }

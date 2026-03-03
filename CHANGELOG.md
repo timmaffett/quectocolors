@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.1.0
+
+### Automatic ANSI Color Level Detection & Downgrade
+
+- Make `write` exactly match the ansicolor package method
+- Added `AnsiColorLevel` enum (`none`, `basic`, `ansi256`, `trueColor`) with a
+  `supports()` method for checking capability tiers.
+- Added `ansiColorLevel` — a mutable global that auto-detects the terminal's
+  color capability from environment variables (`COLORTERM`, `TERM_PROGRAM`,
+  `TERM`, `NO_COLOR`, `FORCE_COLOR`, `WT_SESSION`, `KONSOLE_VERSION`,
+  `VTE_VERSION`, etc.).
+- **Automatic downgrade:** RGB and 256-color methods now automatically
+  downsample to the best supported level — true color falls back to 256-color
+  (via `rgbToAnsi256`), 256-color falls back to the nearest basic ANSI color,
+  and `AnsiColorLevel.none` produces identity (passthrough) closures.
+- Dispatch is resolved once at first access via lazily-initialized top-level
+  `final` function variables — zero per-call branching overhead, matching the
+  library's "branch-on-creation" design philosophy.
+- Platform detection: IO platforms inspect `stdout.supportsAnsiEscapes` and
+  environment variables; web defaults to `trueColor`.
+
+### Documentation
+
+- Achieved **100% dartdoc coverage** (1236/1236 API elements).
+- Added library-level doc comments to all three entry points (`quectocolors.dart`,
+  `small.dart`, `supports_ansi_color.dart`) and the `ansipen.dart` barrel.
+- Added doc comments to all style fields (`reset`, `bold`, `dim`, `italic`,
+  `underline`, `overline`, `inverse`, `hidden`, `strikethrough`, `blink`,
+  `rapidBlink`, `superscript`, `subscript`) in `QuectoPlain`, `QuectoColors`,
+  and `QuectoColorsOnStrings`.
+- Added doc comments to all dynamic color methods (`ansi256`, `bgAnsi256`,
+  `onAnsi256`, `underlineAnsi256`, `rgb`, `bgRgb`, `onRgb`, `underlineRgb`)
+  in both `QuectoPlain` and `QuectoColors`.
+- Added class-level doc comments for `QuectoColors` and `QuectoPlain`.
+- Added doc comments to `AnsiPen` class, constructor, all color/style methods,
+  and all deprecated compatibility symbols.
+- Added "Terminal Color Level Detection" section to README with enum table,
+  usage examples, detection logic, and public symbols reference.
+- Updated ChalkDart comparison table: "Color level downsampling" now "Yes".
+
 ## 1.0.3
 
 - Added `blinking` and `rapidBlinking` aliases for `blink` and `rapidBlink`.

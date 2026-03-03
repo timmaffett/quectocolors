@@ -483,7 +483,7 @@ QuectoColors now covers the vast majority of what most terminal applications nee
 | Chainable API | Yes (AnsiPen) | Yes (chalk) |
 | HTML output mode | No | Yes |
 | Custom color keywords | No | Yes |
-| Color level downsampling | No | Yes |
+| Color level downsampling | Yes | Yes |
 | Drop-in for ansicolor | Yes (AnsiPen compatible) | No |
 | Plain fast path (zero-scan) | Yes | No |
 | Package size | Minimal | Larger |
@@ -513,9 +513,89 @@ Benchmarked with `dart compile exe` (AOT native), 100,000 iterations:
 - You need HSL, HSV, HWB, LAB, or XYZ color input
 - You need HTML `<span>` output mode for web dashboards or log viewers
 - You need double underline or alternative fonts
-- You need automatic color level downsampling (truecolor to 256-color to 16-color fallback)
 
 Both packages handle nested colors correctly. For the features they share, QuectoColors is 30-90x faster.
+
+## Terminal Color Level Detection
+
+QuectoColors automatically detects the terminal's color capabilities on startup and downgrades color output accordingly. You can query, check, and override the detected level.
+
+### The `AnsiColorLevel` Enum
+
+| Value | Meaning |
+|---|---|
+| `AnsiColorLevel.none` | No color — all stylers return identity functions |
+| `AnsiColorLevel.basic` | 16 ANSI colors (SGR 30–37, 40–47, 90–97, 100–107) |
+| `AnsiColorLevel.ansi256` | 256-color xterm palette |
+| `AnsiColorLevel.trueColor` | 24-bit RGB (16 million colors) |
+
+### Reading the Detected Level
+
+```dart
+import 'package:quectocolors/quectocolors.dart';
+
+print(ansiColorLevel); // e.g. AnsiColorLevel.trueColor
+```
+
+### Checking Capabilities
+
+The `supports()` method tests whether the current level is at least the given level:
+
+```dart
+if (ansiColorLevel.supports(AnsiColorLevel.trueColor)) {
+  // Terminal supports 24-bit RGB
+  print('RGB text'.rgb(255, 128, 0));
+}
+
+if (ansiColorLevel.supports(AnsiColorLevel.ansi256)) {
+  // Terminal supports at least 256 colors
+  print('Xterm text'.ansi256(196));
+}
+```
+
+### Overriding Detection
+
+```dart
+// Force a specific level (e.g. for testing or piped output)
+ansiColorLevel = AnsiColorLevel.ansi256;
+
+// Reset to what was auto-detected
+ansiColorLevel = detectedAnsiColorLevel;
+```
+
+### Automatic Color Downgrade
+
+You don't need to manually check the level before using colors. When `ansiColorLevel` is lower than `trueColor`, the library automatically downgrades:
+
+- **`trueColor`** — RGB values used as-is (`\x1B[38;2;r;g;bm`)
+- **`ansi256`** — RGB values mapped to the nearest xterm-256 palette index
+- **`basic`** — RGB and 256-color values mapped to the nearest ANSI 16 color
+- **`none`** — all stylers return the input string unchanged (identity functions)
+
+This downgrade is resolved **once** (lazily on first access), not per-call — there is zero per-call branching overhead.
+
+### Detection Logic
+
+On IO platforms, `detectedAnsiColorLevel` inspects environment variables in priority order:
+
+1. `NO_COLOR` (any value) → `none` ([no-color.org](https://no-color.org/))
+2. `FORCE_COLOR` → `'0'`=none, `'1'`=basic, `'2'`=ansi256, `'3'`=trueColor
+3. `COLORTERM` → `'truecolor'` or `'24bit'` = trueColor
+4. `TERM_PROGRAM` → known terminals (iTerm, VSCode, WezTerm, Alacritty, Ghostty, etc.)
+5. `WT_SESSION` (Windows Terminal), `KONSOLE_VERSION`, `VTE_VERSION`
+6. `TERM` → `'dumb'`=none, `'*256color*'`=ansi256, xterm/screen/tmux/rxvt=ansi256
+7. Default → `basic` (if ANSI escapes are supported at all)
+
+On web and non-IO platforms, defaults to `trueColor`.
+
+### Public Symbols
+
+| Symbol | Type | Description |
+|---|---|---|
+| `ansiColorLevel` | `AnsiColorLevel` (mutable) | Current color level (auto-detected, overridable) |
+| `ansiColorDisabled` | `bool` (mutable) | When `true`, all stylers return identity functions |
+| `detectedAnsiColorLevel` | `AnsiColorLevel` (getter) | Platform-detected level (read-only) |
+| `supportsAnsiColor` | `bool` (getter) | Whether the platform supports ANSI escapes at all |
 
 ## Disabling Colors
 
@@ -527,6 +607,9 @@ ansiColorDisabled = true;
 
 // All styling functions now return the input string unchanged
 print(QuectoColors.red('Hello')); // prints "Hello" with no color codes
+
+// Re-enable
+ansiColorDisabled = false;
 ```
 
 QuectoColors automatically detects whether the terminal supports ANSI escape codes. On platforms without support, colors are disabled by default.
