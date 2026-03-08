@@ -164,4 +164,52 @@ void main() {
       ..rgb(r: 0.4, g: 0.8, b: 1.0, bg: true);
     expect(pen.write('Test Text'), 'Test Text');
   });
+
+  // ---- ansicolor API compatibility tests ----
+
+  test('call() returns String, not dynamic', () {
+    final pen = AnsiPen()..red();
+    // call() must return String so it can be assigned without casts
+    String result = pen('Hello');
+    expect(result, contains('Hello'));
+  });
+
+  test('write() returns String, not dynamic', () {
+    final pen = AnsiPen()..blue();
+    String result = pen.write('Hello');
+    expect(result, contains('Hello'));
+  });
+
+  test('pen results assignable to List<String>', () {
+    final pen = AnsiPen()..green();
+    // This was the original bug report — List<dynamic> can't assign to List<String>
+    final List<String> lines = ['one', 'two', 'three'].map(pen.write).toList();
+    expect(lines, hasLength(3));
+    expect(lines[0], contains('one'));
+  });
+
+  test('pen map usable like ansicolor custom color maps', () {
+    // Typical ansicolor usage pattern from Talker and similar packages
+    final customColors = {
+      'info': AnsiPen()..white(bold: true),
+      'error': AnsiPen()..red(bold: true),
+      'warning': AnsiPen()..yellow(bold: true),
+    };
+    String msg = customColors['error']!('Something failed');
+    expect(msg, contains('Something failed'));
+  });
+
+  test('cascade pen construction matches ansicolor style', () {
+    // ansicolor always uses cascade since color methods return void
+    final pen = AnsiPen()
+      ..red()
+      ..xterm(100, bg: true);
+    expect(pen('text'), contains('text'));
+  });
+
+  test('fluent pen construction also works', () {
+    // Our extension: fluent chaining as an alternative to cascade
+    final pen = AnsiPen().red().bold.italic;
+    expect(pen('text'), contains('text'));
+  });
 }

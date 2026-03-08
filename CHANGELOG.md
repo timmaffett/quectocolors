@@ -1,10 +1,21 @@
 # Changelog
 
+## 1.1.1
+
+### AnsiPen Compatibility
+
+- `call()` and `write()` now return `String` (not `dynamic`), matching the
+  `ansicolor` package's exact method signatures. This fixes type errors when
+  assigning pen results to `String` variables, `List<String>` collections, or
+  typed maps — e.g. `String msg = pen('Hello')` and
+  `List<String> lines = items.map(pen.write).toList()` now work without casts.
+- AnsiPen color methods (`red()`, `blue()`, etc.) return `AnsiPen` for fluent
+  chaining (`AnsiPen().red().bold.italic`) as an alternative to `ansicolor`'s
+  cascade-only syntax (`AnsiPen()..red()`). Both styles are supported.
+
 ## 1.1.0
 
 ### Automatic ANSI Color Level Detection & Downgrade
-
-- Make `write` exactly match the ansicolor package method
 - Added `AnsiColorLevel` enum (`none`, `basic`, `ansi256`, `trueColor`) with a
   `supports()` method for checking capability tiers.
 - Added `ansiColorLevel` — a mutable global that auto-detects the terminal's
@@ -129,6 +140,11 @@ styling library for Dart with correct nested color support.
 - Drop-in replacement for the `ansicolor` package — change
   `import 'package:ansicolor/ansicolor.dart'` to
   `import 'package:quectocolors/ansipen.dart'`.
+- `call()` and `write()` return `String`, matching `ansicolor`'s exact
+  method signatures for type-safe usage.
+- Color methods return `AnsiPen` for fluent chaining
+  (`AnsiPen().red().bold.italic`) in addition to `ansicolor`'s cascade
+  syntax (`AnsiPen()..red()`).
 - Exports `ansiColorDisabled`, `ansiEscape`, `ansiDefault`,
   `ansiResetForeground`, `ansiResetBackground`, and deprecated aliases
   (`color_disabled`, `ansi_esc`, `ansi_default`).

@@ -30,7 +30,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  quectocolors: ^1.0.3
+  quectocolors: ^1.1.1
 ```
 
 ## Imports
@@ -102,18 +102,29 @@ print(QuectoColors.red('Start ${QuectoColors.blue("middle")} end'));
 
 ### 3. AnsiPen-Compatible Fluent API
 
-A drop-in replacement for the `ansicolor` package's `AnsiPen`. Supports the same method signatures (`red()`, `blue(bg: true)`, etc.) plus additional styles like `italic`, `strikethrough`, and `overline` that `ansicolor` doesn't offer — and correctly handles nested colors.
+A drop-in replacement for the `ansicolor` package's `AnsiPen`. The `call()` and `write()` methods return `String` (matching ansicolor's exact signatures), so you can assign results to typed variables and collections without casts. Supports the same method signatures (`red()`, `blue(bg: true)`, etc.) plus additional styles like `italic`, `strikethrough`, and `overline` that `ansicolor` doesn't offer — and correctly handles nested colors.
 
 ```dart
 import 'package:quectocolors/ansipen.dart';
 
-// Same API as ansicolor's AnsiPen
+// Same cascade API as ansicolor's AnsiPen
 final pen = AnsiPen()..red();
 print(pen('Hello'));
 
-// But you can also chain styles that ansicolor can't do
+// QuectoColors extension: fluent chaining (ansicolor only supports cascade)
 final fancy = AnsiPen().red().bold.italic.strikethrough;
 print(fancy('Fancy text'));
+
+// Type-safe: call() and write() return String, not dynamic
+String msg = pen('Hello');                              // works
+List<String> lines = ['a', 'b'].map(pen.write).toList(); // works
+
+// Works with typed maps (e.g. Talker-style custom color maps)
+final colors = {
+  'info': AnsiPen()..white(bold: true),
+  'error': AnsiPen()..red(bold: true),
+};
+String errMsg = colors['error']!('Something failed');
 ```
 
 See [Migrating from ansicolor](#migrating-from-ansicolor) below for details.
@@ -428,17 +439,31 @@ print(pen('Hello'));
 
 final bgPen = AnsiPen()..blue(bg: true);
 print(bgPen('Blue background'));
+
+// Type-safe: call() and write() return String, matching ansicolor's signatures
+String result = pen('Hello');
+String written = pen.write('Hello');
 ```
 
-**3. Gain new capabilities:**
+**3. Cascade and fluent chaining:**
+
+The `ansicolor` package's color methods return `void`, so cascade (`..`) is the only way to build pens. QuectoColors color methods return `AnsiPen`, so both styles work:
+
+```dart
+// Cascade syntax — same as ansicolor (always works)
+final pen1 = AnsiPen()..red()..xterm(100, bg: true);
+
+// Fluent chaining — QuectoColors extension (more concise for multi-style pens)
+final pen2 = AnsiPen().red().bold.italic.strikethrough;
+```
+
+Both produce the same result. Use whichever style you prefer.
+
+**4. Gain new capabilities:**
 
 After switching, you can also use features that `ansicolor` doesn't support:
 
 ```dart
-// Chain multiple styles (ansicolor only supports one color per pen)
-final fancy = AnsiPen().red().bold.italic.strikethrough;
-print(fancy('Red bold italic strikethrough'));
-
 // Nested colors now work correctly
 final red = AnsiPen()..red();
 final blue = AnsiPen()..blue();
@@ -451,9 +476,13 @@ print(orange('True color orange'));
 // 256-color xterm via AnsiPen
 final xterm = AnsiPen()..ansi256Fg(196);
 print(xterm('Xterm red'));
+
+// Text styles: bold, italic, underline, strikethrough, overline, dim, inverse
+final styled = AnsiPen().cyan().bold.underline;
+print(styled('Styled text'));
 ```
 
-**4. The `ansiColorDisabled` global flag and `color_disabled` deprecated getter/setter are both supported** for full backwards compatibility.
+**5. The `ansiColorDisabled` global flag and `color_disabled` deprecated getter/setter are both supported** for full backwards compatibility.
 
 ## Comparison with ChalkDart
 

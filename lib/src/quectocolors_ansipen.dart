@@ -23,11 +23,10 @@ class AnsiPen {
 
   /// Applies this pen's styles to [input] and returns the styled string.
   ///
-  /// When called with no arguments, returns `this` for chaining.
   /// `pen('msg')` is equivalent to `pen.write('msg')`.
-  dynamic call([Object? input]) {
-    if (input == null) return this; // getter called without args
-    String string = input.toString();
+  /// Compatible with `ansicolor`'s `AnsiPen.call()` signature.
+  String call(Object msg) {
+    String string = msg.toString();
     // Faster handle common cases directly without loop
     switch (styleStack.length) {
       case 0:
@@ -49,7 +48,7 @@ class AnsiPen {
   /// Applies this pen's styles to [input] and returns the styled string.
   ///
   /// Equivalent to [call]. Compatible with `ansicolor`'s `pen.write()`.
-  String write(Object input) => call(input) as String;
+  String write(Object msg) => call(msg);
 
   /// Returns the ANSI escape codes that open the pen's current styles.
   /// Compatible with ansicolor's `pen.down` / `'${pen}'` usage.
